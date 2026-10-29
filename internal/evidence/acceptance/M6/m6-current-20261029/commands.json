@@ -94,122 +94,133 @@
       "commandId": "contracts-billing-contracts",
       "invocation": "node --experimental-strip-types --test tests/contracts/billing-contracts.test.ts",
       "environmentId": "m6-current-local-20261029",
-      "startAt": "2026-10-29T04:00:42.286Z",
-      "endAt": "2026-10-29T04:00:42.403Z",
+      "startAt": "2026-10-29T05:39:10.455Z",
+      "endAt": "2026-10-29T05:39:10.585Z",
       "exitCode": 0,
       "signal": null,
       "status": "PASS",
-      "outputRef": "internal/evidence/acceptance/M6/m6-current-20261029/logs/contracts-billing-contracts.log"
+      "outputRef": "internal/evidence/acceptance/local-rerun-20261029/contracts-billing-contracts.log"
     },
     {
       "commandId": "billing-schema",
       "invocation": "node --env-file=.env.local --experimental-strip-types scripts/probe-billing-schema.ts",
       "environmentId": "m6-current-local-20261029",
-      "startAt": "2026-10-29T04:00:42.404Z",
-      "endAt": "2026-10-29T04:00:43.275Z",
+      "startAt": "2026-10-29T05:39:06.997Z",
+      "endAt": "2026-10-29T05:39:08.461Z",
       "exitCode": 0,
       "signal": null,
       "status": "PASS",
-      "outputRef": "internal/evidence/acceptance/M6/m6-current-20261029/logs/billing-schema.log"
+      "outputRef": "internal/evidence/acceptance/local-rerun-20261029/billing-schema.log"
     },
     {
       "commandId": "m6-operations",
       "invocation": "node --env-file=.env.local --experimental-strip-types scripts/probe-m6-operations.ts",
       "environmentId": "m6-current-local-20261029",
-      "startAt": "2026-10-29T04:00:50.255Z",
-      "endAt": "2026-10-29T04:00:51.178Z",
+      "startAt": "2026-10-29T05:39:16.148Z",
+      "endAt": "2026-10-29T05:39:17.109Z",
       "exitCode": 0,
       "signal": null,
       "status": "PASS",
-      "outputRef": "internal/evidence/acceptance/M6/m6-current-20261029/logs/m6-operations.log"
+      "outputRef": "internal/evidence/acceptance/local-rerun-20261029/m6-operations.log"
     },
     {
       "commandId": "m6-privileged",
       "invocation": "node --env-file=.env.local --experimental-strip-types scripts/probe-m6-privileged.ts",
       "environmentId": "m6-current-local-20261029",
-      "startAt": "2026-10-29T04:00:51.179Z",
-      "endAt": "2026-10-29T04:00:52.220Z",
+      "startAt": "2026-10-29T05:39:17.110Z",
+      "endAt": "2026-10-29T05:39:18.201Z",
       "exitCode": 0,
       "signal": null,
       "status": "PASS",
-      "outputRef": "internal/evidence/acceptance/M6/m6-current-20261029/logs/m6-privileged.log"
+      "outputRef": "internal/evidence/acceptance/local-rerun-20261029/m6-privileged.log"
     },
     {
       "commandId": "m6-mfa",
       "invocation": "node --env-file=.env.local --experimental-strip-types scripts/probe-m6-two-factor.ts",
       "environmentId": "m6-current-local-20261029",
-      "startAt": "2026-10-29T04:00:52.222Z",
-      "endAt": "2026-10-29T04:00:53.785Z",
+      "startAt": "2026-10-29T05:39:18.202Z",
+      "endAt": "2026-10-29T05:39:19.970Z",
       "exitCode": 0,
       "signal": null,
       "status": "PASS",
-      "outputRef": "internal/evidence/acceptance/M6/m6-current-20261029/logs/m6-mfa.log"
+      "outputRef": "internal/evidence/acceptance/local-rerun-20261029/m6-mfa.log"
     },
     {
       "commandId": "m6-recovery",
       "invocation": "node --env-file=.env.local --experimental-strip-types scripts/probe-m6-recovery.ts",
       "environmentId": "m6-current-local-20261029",
-      "startAt": "2026-10-29T04:00:53.787Z",
-      "endAt": "2026-10-29T04:00:54.486Z",
+      "startAt": "2026-10-29T05:39:19.971Z",
+      "endAt": "2026-10-29T05:39:20.778Z",
       "exitCode": 0,
       "signal": null,
       "status": "PASS",
-      "outputRef": "internal/evidence/acceptance/M6/m6-current-20261029/logs/m6-recovery.log"
+      "outputRef": "internal/evidence/acceptance/local-rerun-20261029/m6-recovery.log"
     },
     {
       "commandId": "m6-affiliate",
       "invocation": "node --env-file=.env.local --experimental-strip-types scripts/probe-m6-affiliate.ts",
       "environmentId": "m6-current-local-20261029",
-      "startAt": "2026-10-29T04:00:54.488Z",
-      "endAt": "2026-10-29T04:00:54.560Z",
+      "startAt": "2026-10-29T05:39:20.779Z",
+      "endAt": "2026-10-29T05:39:20.856Z",
       "exitCode": 0,
       "signal": null,
       "status": "PASS",
-      "outputRef": "internal/evidence/acceptance/M6/m6-current-20261029/logs/m6-affiliate.log"
+      "outputRef": "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate.log"
     },
     {
       "commandId": "m6-affiliate-db",
       "invocation": "node --env-file=.env.local --experimental-strip-types scripts/probe-m6-affiliate-db.ts",
       "environmentId": "m6-current-local-20261029",
-      "startAt": "2026-10-29T04:00:54.561Z",
-      "endAt": "2026-10-29T04:00:55.713Z",
+      "startAt": "2026-10-29T05:39:20.857Z",
+      "endAt": "2026-10-29T05:39:22.257Z",
       "exitCode": 0,
       "signal": null,
       "status": "PASS",
-      "outputRef": "internal/evidence/acceptance/M6/m6-current-20261029/logs/m6-affiliate-db.log"
+      "outputRef": "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-db.log"
     },
     {
       "commandId": "m6-affiliate-races",
       "invocation": "node --env-file=.env.local --experimental-strip-types scripts/probe-m6-affiliate-races.ts",
       "environmentId": "m6-current-local-20261029",
-      "startAt": "2026-10-29T04:00:55.715Z",
-      "endAt": "2026-10-29T04:00:59.290Z",
+      "startAt": "2026-10-29T05:39:22.257Z",
+      "endAt": "2026-10-29T05:39:26.488Z",
       "exitCode": 0,
       "signal": null,
       "status": "PASS",
-      "outputRef": "internal/evidence/acceptance/M6/m6-current-20261029/logs/m6-affiliate-races.log"
+      "outputRef": "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-races.log"
     },
     {
       "commandId": "m6-cash-affiliate",
       "invocation": "node --env-file=.env.local --experimental-strip-types scripts/probe-m6-cash-affiliate.ts",
       "environmentId": "m6-current-local-20261029",
-      "startAt": "2026-10-29T04:00:59.291Z",
-      "endAt": "2026-10-29T04:01:00.204Z",
+      "startAt": "2026-10-29T05:39:26.489Z",
+      "endAt": "2026-10-29T05:39:27.495Z",
       "exitCode": 0,
       "signal": null,
       "status": "PASS",
-      "outputRef": "internal/evidence/acceptance/M6/m6-current-20261029/logs/m6-cash-affiliate.log"
+      "outputRef": "internal/evidence/acceptance/local-rerun-20261029/m6-cash-affiliate.log"
     },
     {
       "commandId": "m6-affiliate-notifications",
       "invocation": "node --env-file=.env.local --experimental-strip-types scripts/probe-m6-affiliate-notifications.ts",
       "environmentId": "m6-current-local-20261029",
-      "startAt": "2026-10-29T04:01:00.206Z",
-      "endAt": "2026-10-29T04:01:01.138Z",
+      "startAt": "2026-10-29T05:39:27.496Z",
+      "endAt": "2026-10-29T05:39:28.588Z",
       "exitCode": 0,
       "signal": null,
       "status": "PASS",
-      "outputRef": "internal/evidence/acceptance/M6/m6-current-20261029/logs/m6-affiliate-notifications.log"
+      "outputRef": "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-notifications.log"
+    },
+    {
+      "commandId": "m6-affiliate-referral",
+      "invocation": "node --env-file=.env.local --experimental-strip-types scripts/probe-m6-affiliate-referral.ts",
+      "environmentId": "m6-current-local-20261029",
+      "startAt": "2026-10-29T05:39:28.589Z",
+      "endAt": "2026-10-29T05:39:29.422Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-referral.log"
     }
   ]
 }

@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.0",
   "queueKind": "FINAL_MANUAL_ACCEPTANCE_QUEUE",
-  "generatedAt": "2026-10-29T04:57:06.550Z",
+  "generatedAt": "2026-10-29T05:41:56.464Z",
   "checkpointId": "M8-STABLE",
   "policy": "Automated evidence produces a complete explanation package and may advance as READY_FOR_REVIEW. Human reviewers choose PASS, FAIL or RETURN_FOR_EVIDENCE from that package; they do not rerun tests as a substitute for reviewing evidence. Independent review and integration decisions are accumulated here and are the only manual stage-acceptance actions required before final PASS.",
   "entries": [
@@ -7653,7 +7653,7 @@
             "applicable": null,
             "result": "BLOCKED",
             "expected": "All required milestone profiles and independent whole-stage review pass.",
-            "observed": "Local install, typecheck, lint, format, database boundary, OpenSpec, provider-input and billing-contract tests, billing schema probe and production build passed on this digest. Point-in-time public Acceptance web health and the then-active provider worker health were read with createsEnabled false. The 2026-10-29 hosted four-path create/settle/verify on Railway worker shpitto-m4-worker (production) is recorded in hostedFourPathCreate: one paid POST per path, stage verified, task succeeded, reservation consumed, quoted credits 10, private hash PASS, owner HTTP 200, outsider/wrong/expired token 403, authenticated account callback true, and provider cost status UNKNOWN. The fal T2V file stores task success under taskSuatus. After all four paths the worker was returned to STATE=paused and ALLOW_CREATE=false, and healthz confirmed state=paused and createsEnabled=false. Each retained row records automaticRetry false. Probe, deadline, and alert configuration, and an independent sweep or lease recovery drill, were not re-verified. This criterion stays BLOCKED.",
+            "observed": "Local install, typecheck, lint, format, database boundary, OpenSpec, provider-input and billing-contract tests, billing schema probe and production build passed on this digest. Point-in-time public Acceptance web health and the then-active provider worker health were read with createsEnabled false. The 2026-10-29 hosted four-path create/settle/verify on Railway worker shpitto-m4-worker (production) is recorded in hostedFourPathCreate: one paid POST per path, stage verified, task succeeded, reservation consumed, quoted credits 10, private hash PASS, owner HTTP 200, outsider/wrong/expired token 403, authenticated account callback true, and provider cost status UNKNOWN. The fal T2V file stores task success under taskSuatus. After all four paths the worker was returned to STATE=paused and ALLOW_CREATE=false, and healthz confirmed state=paused and createsEnabled=false. Each retained row records automaticRetry false. The 2026-10-29 selected self-hosted recovery drill is recorded in hostedRecoveryDrill: prepare, seed-overdue, inspect, and verify exited 0; verify.verified is true with 102 deadline_exceeded tasks and 102 reservations released; the unknown-submission fence was preserved; paidProviderRequests is 0. The worker restarted with the same workspace binding and was left active with SHPITTO_PROVIDER_WORKER_ALLOW_CREATE=false. The recovery-monitor /healthz ready body was re-read after the drill (status ready, mode observe, deliveryPending false, providerCreatesEnabled false, errors 35). Inspect remains the seeded projection with verified false. Numeric probe, deadline, and alert configuration, and lease fencing beyond this drill, were not established. This criterion stays BLOCKED.",
             "assertions": null,
             "commandRef": null,
             "iteration": null,
@@ -7667,7 +7667,13 @@
               "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261029/replicate-wan22-t2v_6e3d.json",
               "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261029/fal-wan22-t2v_68bb.json",
               "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261029/fal-wan22-i2v_bda3.json",
-              "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261029/replicate-wan22-i2v_ee33.json"
+              "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261029/replicate-wan22-i2v_ee33.json",
+              "internal/evidence/M4/task-5.10/railway-worker/recovery-drill-20261029/recovery-execution-20261029.json",
+              "internal/evidence/M4/task-5.10/railway-worker/recovery-drill-20261029/recovery-drill-20261029.md",
+              "internal/evidence/M4/task-5.10/railway-worker/recovery-drill-20261029/inspect.json",
+              "internal/evidence/M4/task-5.10/railway-worker/recovery-drill-20261029/verify.json",
+              "internal/evidence/M4/task-5.10/railway-worker/recovery-drill-20261029/monitor-ready.json",
+              "internal/evidence/acceptance/M4/m4-current-20261029/logs/probe-provider-recovery.log"
             ]
           },
           {
@@ -7679,7 +7685,7 @@
             "applicable": null,
             "result": "BLOCKED",
             "expected": "All required milestone profiles and independent whole-stage review pass.",
-            "observed": "Local install, typecheck, lint, format, database boundary, OpenSpec, provider-input and billing-contract tests, billing schema probe and production build passed on this digest. Point-in-time public Acceptance web health and the then-active provider worker health were read with createsEnabled false. The 2026-10-29 hosted four-path create/settle/verify on Railway worker shpitto-m4-worker (production) is recorded in hostedFourPathCreate: one paid POST per path, stage verified, task succeeded, reservation consumed, quoted credits 10, private hash PASS, owner HTTP 200, outsider/wrong/expired token 403, authenticated account callback true, and provider cost status UNKNOWN. The fal T2V file stores task success under taskSuatus. After all four paths the worker was returned to STATE=paused and ALLOW_CREATE=false, and healthz confirmed state=paused and createsEnabled=false. Storage-failure, expired-output, stale-acknowledgement, and late-after-refund fault suites, and a controlled restart or recovery drill, were not re-verified. Recovery-monitor ready output was not re-read. This criterion stays BLOCKED.",
+            "observed": "Local install, typecheck, lint, format, database boundary, OpenSpec, provider-input and billing-contract tests, billing schema probe and production build passed on this digest. Point-in-time public Acceptance web health and the then-active provider worker health were read with createsEnabled false. The 2026-10-29 hosted four-path create/settle/verify on Railway worker shpitto-m4-worker (production) is recorded in hostedFourPathCreate: one paid POST per path, stage verified, task succeeded, reservation consumed, quoted credits 10, private hash PASS, owner HTTP 200, outsider/wrong/expired token 403, authenticated account callback true, and provider cost status UNKNOWN. The fal T2V file stores task success under taskSuatus. After all four paths the worker was returned to STATE=paused and ALLOW_CREATE=false, and healthz confirmed state=paused and createsEnabled=false. The controlled self-hosted restart and recovery drill is recorded in hostedRecoveryDrill and made no paid provider request. The recovery-monitor ready body was re-read after the drill. Storage-failure, expired-output, stale-acknowledgement, and late-after-refund fault suites were not re-verified. This criterion stays BLOCKED.",
             "assertions": null,
             "commandRef": null,
             "iteration": null,
@@ -7693,7 +7699,13 @@
               "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261029/replicate-wan22-t2v_6e3d.json",
               "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261029/fal-wan22-t2v_68bb.json",
               "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261029/fal-wan22-i2v_bda3.json",
-              "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261029/replicate-wan22-i2v_ee33.json"
+              "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261029/replicate-wan22-i2v_ee33.json",
+              "internal/evidence/M4/task-5.10/railway-worker/recovery-drill-20261029/recovery-execution-20261029.json",
+              "internal/evidence/M4/task-5.10/railway-worker/recovery-drill-20261029/recovery-drill-20261029.md",
+              "internal/evidence/M4/task-5.10/railway-worker/recovery-drill-20261029/inspect.json",
+              "internal/evidence/M4/task-5.10/railway-worker/recovery-drill-20261029/verify.json",
+              "internal/evidence/M4/task-5.10/railway-worker/recovery-drill-20261029/monitor-ready.json",
+              "internal/evidence/acceptance/M4/m4-current-20261029/logs/probe-provider-recovery.log"
             ]
           }
         ],
@@ -7738,7 +7750,7 @@
             "result": "BLOCKED",
             "expected": null,
             "observed": null,
-            "assertions": "Local install, typecheck, lint, format, database boundary, OpenSpec, provider-input and billing-contract tests, billing schema probe and production build passed on this digest. Point-in-time public Acceptance web health and the then-active provider worker health were read with createsEnabled false. The 2026-10-29 hosted four-path create/settle/verify on Railway worker shpitto-m4-worker (production) is recorded in hostedFourPathCreate: one paid POST per path, stage verified, task succeeded, reservation consumed, quoted credits 10, private hash PASS, owner HTTP 200, outsider/wrong/expired token 403, authenticated account callback true, and provider cost status UNKNOWN. The fal T2V file stores task success under taskSuatus. After all four paths the worker was returned to STATE=paused and ALLOW_CREATE=false, and healthz confirmed state=paused and createsEnabled=false. Complete stage evidence stays BLOCKED. The recovery drill, negative callback and financial-idempotence cases, deadline and sweep configuration, recovery-monitor ready output, owned-module coverage, current M3 equivalence, and independent review remain open.",
+            "assertions": "Local install, typecheck, lint, format, database boundary, OpenSpec, provider-input and billing-contract tests, billing schema probe and production build passed on this digest. Point-in-time public Acceptance web health and the then-active provider worker health were read with createsEnabled false. The 2026-10-29 hosted four-path create/settle/verify on Railway worker shpitto-m4-worker (production) is recorded in hostedFourPathCreate: one paid POST per path, stage verified, task succeeded, reservation consumed, quoted credits 10, private hash PASS, owner HTTP 200, outsider/wrong/expired token 403, authenticated account callback true, and provider cost status UNKNOWN. The fal T2V file stores task success under taskSuatus. After all four paths the worker was returned to STATE=paused and ALLOW_CREATE=false, and healthz confirmed state=paused and createsEnabled=false. Complete stage evidence stays BLOCKED. The selected self-hosted recovery drill and recovery-monitor ready body are recorded and do not close the stage. Negative callback and financial-idempotence cases, numeric deadline and probe configuration, storage-failure fault suites, owned-module coverage, current M3 equivalence, and independent review remain open.",
             "commandRef": null,
             "iteration": null,
             "seed": null,
@@ -7748,7 +7760,13 @@
               "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261029/replicate-wan22-t2v_6e3d.json",
               "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261029/fal-wan22-t2v_68bb.json",
               "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261029/fal-wan22-i2v_bda3.json",
-              "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261029/replicate-wan22-i2v_ee33.json"
+              "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261029/replicate-wan22-i2v_ee33.json",
+              "internal/evidence/M4/task-5.10/railway-worker/recovery-drill-20261029/recovery-execution-20261029.json",
+              "internal/evidence/M4/task-5.10/railway-worker/recovery-drill-20261029/recovery-drill-20261029.md",
+              "internal/evidence/M4/task-5.10/railway-worker/recovery-drill-20261029/inspect.json",
+              "internal/evidence/M4/task-5.10/railway-worker/recovery-drill-20261029/verify.json",
+              "internal/evidence/M4/task-5.10/railway-worker/recovery-drill-20261029/monitor-ready.json",
+              "internal/evidence/acceptance/M4/m4-current-20261029/logs/probe-provider-recovery.log"
             ]
           }
         ],
@@ -8591,7 +8609,7 @@
             "exitCode": 0,
             "startedAt": null,
             "finishedAt": null,
-            "outputRef": "internal/evidence/acceptance/M4/m4-current-20261029/logs/contracts-billing-contracts.log"
+            "outputRef": "internal/evidence/acceptance/local-rerun-20261029/contracts-billing-contracts.log"
           },
           {
             "commandId": "billing-schema",
@@ -8601,7 +8619,7 @@
             "exitCode": 0,
             "startedAt": null,
             "finishedAt": null,
-            "outputRef": "internal/evidence/acceptance/M4/m4-current-20261029/logs/billing-schema.log"
+            "outputRef": "internal/evidence/acceptance/local-rerun-20261029/billing-schema.log"
           },
           {
             "commandId": "hosted-web-health",
@@ -8622,6 +8640,16 @@
             "startedAt": null,
             "finishedAt": null,
             "outputRef": "internal/evidence/acceptance/M4/m4-current-20261029/logs/hosted-worker-health.log"
+          },
+          {
+            "commandId": "probe-provider-recovery",
+            "invocation": "node --experimental-strip-types scripts/probe-provider-recovery.ts",
+            "environmentId": "m4-current-local-20261029",
+            "status": "PASS",
+            "exitCode": 0,
+            "startedAt": null,
+            "finishedAt": null,
+            "outputRef": "internal/evidence/acceptance/M4/m4-current-20261029/logs/probe-provider-recovery.log"
           }
         ],
         "coverage": {
@@ -11884,7 +11912,7 @@
             "applicable": null,
             "result": "BLOCKED",
             "expected": "All required milestone profiles and independent whole-stage review pass.",
-            "observed": "Local billing schema, Checkout and reconciliation probes passed, as did fake-provider Stripe Checkout and reconciliation integration suites and the billing presentation unit. The Stripe refunds integration suite failed its operator step-up case (21/22). Hosted Stripe test-mode readback, owner-command replay, authenticated billing UI and live charges were not re-run.",
+            "observed": "On 2026-10-29T05:39Z local billing schema, Checkout and reconciliation probes passed again, as did fake-provider Stripe Checkout, reconciliation and inbox integration suites and the billing presentation unit. The Stripe refunds integration suite again failed its operator step-up case (21 pass, 1 fail) and is not a PASS command. Hosted Stripe test-mode readback, owner-command replay, authenticated billing UI and live charges were not re-run. No live Stripe charge was made.",
             "assertions": null,
             "commandRef": null,
             "iteration": null,
@@ -11894,7 +11922,15 @@
               "internal/evidence/acceptance/M5/m5-current-20261029/logs/frozen-lock-install.log",
               "internal/evidence/acceptance/M5/m5-current-20261029/logs/typecheck.log",
               "internal/evidence/acceptance/M5/m5-current-20261029/logs/lint.log",
-              "internal/evidence/acceptance/M5/m5-current-20261029/logs/format-check.log"
+              "internal/evidence/acceptance/M5/m5-current-20261029/logs/format-check.log",
+              "internal/evidence/acceptance/local-rerun-20261029/billing-schema.log",
+              "internal/evidence/acceptance/local-rerun-20261029/billing-checkout.log",
+              "internal/evidence/acceptance/local-rerun-20261029/billing-reconciliation.log",
+              "internal/evidence/acceptance/local-rerun-20261029/stripe-checkout-integration.log",
+              "internal/evidence/acceptance/local-rerun-20261029/stripe-reconciliation-integration.log",
+              "internal/evidence/acceptance/local-rerun-20261029/stripe-inbox-integration.log",
+              "internal/evidence/acceptance/local-rerun-20261029/billing-presentation-unit.log",
+              "internal/evidence/acceptance/local-rerun-20261029/stripe-refunds-integration.log"
             ]
           },
           {
@@ -11906,7 +11942,7 @@
             "applicable": null,
             "result": "BLOCKED",
             "expected": "All required milestone profiles and independent whole-stage review pass.",
-            "observed": "Local billing schema, Checkout and reconciliation probes passed, as did fake-provider Stripe Checkout and reconciliation integration suites and the billing presentation unit. The Stripe refunds integration suite failed its operator step-up case (21/22). Hosted Stripe test-mode readback, owner-command replay, authenticated billing UI and live charges were not re-run.",
+            "observed": "On 2026-10-29T05:39Z local billing schema, Checkout and reconciliation probes passed again, as did fake-provider Stripe Checkout, reconciliation and inbox integration suites and the billing presentation unit. The Stripe refunds integration suite again failed its operator step-up case (21 pass, 1 fail) and is not a PASS command. Hosted Stripe test-mode readback, owner-command replay, authenticated billing UI and live charges were not re-run. No live Stripe charge was made.",
             "assertions": null,
             "commandRef": null,
             "iteration": null,
@@ -11916,7 +11952,15 @@
               "internal/evidence/acceptance/M5/m5-current-20261029/logs/frozen-lock-install.log",
               "internal/evidence/acceptance/M5/m5-current-20261029/logs/typecheck.log",
               "internal/evidence/acceptance/M5/m5-current-20261029/logs/lint.log",
-              "internal/evidence/acceptance/M5/m5-current-20261029/logs/format-check.log"
+              "internal/evidence/acceptance/M5/m5-current-20261029/logs/format-check.log",
+              "internal/evidence/acceptance/local-rerun-20261029/billing-schema.log",
+              "internal/evidence/acceptance/local-rerun-20261029/billing-checkout.log",
+              "internal/evidence/acceptance/local-rerun-20261029/billing-reconciliation.log",
+              "internal/evidence/acceptance/local-rerun-20261029/stripe-checkout-integration.log",
+              "internal/evidence/acceptance/local-rerun-20261029/stripe-reconciliation-integration.log",
+              "internal/evidence/acceptance/local-rerun-20261029/stripe-inbox-integration.log",
+              "internal/evidence/acceptance/local-rerun-20261029/billing-presentation-unit.log",
+              "internal/evidence/acceptance/local-rerun-20261029/stripe-refunds-integration.log"
             ]
           },
           {
@@ -11928,7 +11972,7 @@
             "applicable": null,
             "result": "BLOCKED",
             "expected": "All required milestone profiles and independent whole-stage review pass.",
-            "observed": "Local billing schema, Checkout and reconciliation probes passed, as did fake-provider Stripe Checkout and reconciliation integration suites and the billing presentation unit. The Stripe refunds integration suite failed its operator step-up case (21/22). Hosted Stripe test-mode readback, owner-command replay, authenticated billing UI and live charges were not re-run.",
+            "observed": "On 2026-10-29T05:39Z local billing schema, Checkout and reconciliation probes passed again, as did fake-provider Stripe Checkout, reconciliation and inbox integration suites and the billing presentation unit. The Stripe refunds integration suite again failed its operator step-up case (21 pass, 1 fail) and is not a PASS command. Hosted Stripe test-mode readback, owner-command replay, authenticated billing UI and live charges were not re-run. No live Stripe charge was made.",
             "assertions": null,
             "commandRef": null,
             "iteration": null,
@@ -11938,7 +11982,15 @@
               "internal/evidence/acceptance/M5/m5-current-20261029/logs/frozen-lock-install.log",
               "internal/evidence/acceptance/M5/m5-current-20261029/logs/typecheck.log",
               "internal/evidence/acceptance/M5/m5-current-20261029/logs/lint.log",
-              "internal/evidence/acceptance/M5/m5-current-20261029/logs/format-check.log"
+              "internal/evidence/acceptance/M5/m5-current-20261029/logs/format-check.log",
+              "internal/evidence/acceptance/local-rerun-20261029/billing-schema.log",
+              "internal/evidence/acceptance/local-rerun-20261029/billing-checkout.log",
+              "internal/evidence/acceptance/local-rerun-20261029/billing-reconciliation.log",
+              "internal/evidence/acceptance/local-rerun-20261029/stripe-checkout-integration.log",
+              "internal/evidence/acceptance/local-rerun-20261029/stripe-reconciliation-integration.log",
+              "internal/evidence/acceptance/local-rerun-20261029/stripe-inbox-integration.log",
+              "internal/evidence/acceptance/local-rerun-20261029/billing-presentation-unit.log",
+              "internal/evidence/acceptance/local-rerun-20261029/stripe-refunds-integration.log"
             ]
           },
           {
@@ -11950,7 +12002,7 @@
             "applicable": null,
             "result": "BLOCKED",
             "expected": "All required milestone profiles and independent whole-stage review pass.",
-            "observed": "Local billing schema, Checkout and reconciliation probes passed, as did fake-provider Stripe Checkout and reconciliation integration suites and the billing presentation unit. The Stripe refunds integration suite failed its operator step-up case (21/22). Hosted Stripe test-mode readback, owner-command replay, authenticated billing UI and live charges were not re-run.",
+            "observed": "On 2026-10-29T05:39Z local billing schema, Checkout and reconciliation probes passed again, as did fake-provider Stripe Checkout, reconciliation and inbox integration suites and the billing presentation unit. The Stripe refunds integration suite again failed its operator step-up case (21 pass, 1 fail) and is not a PASS command. Hosted Stripe test-mode readback, owner-command replay, authenticated billing UI and live charges were not re-run. No live Stripe charge was made.",
             "assertions": null,
             "commandRef": null,
             "iteration": null,
@@ -11960,7 +12012,15 @@
               "internal/evidence/acceptance/M5/m5-current-20261029/logs/frozen-lock-install.log",
               "internal/evidence/acceptance/M5/m5-current-20261029/logs/typecheck.log",
               "internal/evidence/acceptance/M5/m5-current-20261029/logs/lint.log",
-              "internal/evidence/acceptance/M5/m5-current-20261029/logs/format-check.log"
+              "internal/evidence/acceptance/M5/m5-current-20261029/logs/format-check.log",
+              "internal/evidence/acceptance/local-rerun-20261029/billing-schema.log",
+              "internal/evidence/acceptance/local-rerun-20261029/billing-checkout.log",
+              "internal/evidence/acceptance/local-rerun-20261029/billing-reconciliation.log",
+              "internal/evidence/acceptance/local-rerun-20261029/stripe-checkout-integration.log",
+              "internal/evidence/acceptance/local-rerun-20261029/stripe-reconciliation-integration.log",
+              "internal/evidence/acceptance/local-rerun-20261029/stripe-inbox-integration.log",
+              "internal/evidence/acceptance/local-rerun-20261029/billing-presentation-unit.log",
+              "internal/evidence/acceptance/local-rerun-20261029/stripe-refunds-integration.log"
             ]
           },
           {
@@ -11972,7 +12032,7 @@
             "applicable": null,
             "result": "BLOCKED",
             "expected": "All required milestone profiles and independent whole-stage review pass.",
-            "observed": "Local billing schema, Checkout and reconciliation probes passed, as did fake-provider Stripe Checkout and reconciliation integration suites and the billing presentation unit. The Stripe refunds integration suite failed its operator step-up case (21/22). Hosted Stripe test-mode readback, owner-command replay, authenticated billing UI and live charges were not re-run.",
+            "observed": "On 2026-10-29T05:39Z local billing schema, Checkout and reconciliation probes passed again, as did fake-provider Stripe Checkout, reconciliation and inbox integration suites and the billing presentation unit. The Stripe refunds integration suite again failed its operator step-up case (21 pass, 1 fail) and is not a PASS command. Hosted Stripe test-mode readback, owner-command replay, authenticated billing UI and live charges were not re-run. No live Stripe charge was made.",
             "assertions": null,
             "commandRef": null,
             "iteration": null,
@@ -11982,7 +12042,15 @@
               "internal/evidence/acceptance/M5/m5-current-20261029/logs/frozen-lock-install.log",
               "internal/evidence/acceptance/M5/m5-current-20261029/logs/typecheck.log",
               "internal/evidence/acceptance/M5/m5-current-20261029/logs/lint.log",
-              "internal/evidence/acceptance/M5/m5-current-20261029/logs/format-check.log"
+              "internal/evidence/acceptance/M5/m5-current-20261029/logs/format-check.log",
+              "internal/evidence/acceptance/local-rerun-20261029/billing-schema.log",
+              "internal/evidence/acceptance/local-rerun-20261029/billing-checkout.log",
+              "internal/evidence/acceptance/local-rerun-20261029/billing-reconciliation.log",
+              "internal/evidence/acceptance/local-rerun-20261029/stripe-checkout-integration.log",
+              "internal/evidence/acceptance/local-rerun-20261029/stripe-reconciliation-integration.log",
+              "internal/evidence/acceptance/local-rerun-20261029/stripe-inbox-integration.log",
+              "internal/evidence/acceptance/local-rerun-20261029/billing-presentation-unit.log",
+              "internal/evidence/acceptance/local-rerun-20261029/stripe-refunds-integration.log"
             ]
           }
         ],
@@ -12030,13 +12098,21 @@
             "result": "BLOCKED",
             "expected": null,
             "observed": null,
-            "assertions": "Local billing schema, Checkout and reconciliation probes passed, as did fake-provider Stripe Checkout and reconciliation integration suites and the billing presentation unit. The Stripe refunds integration suite failed its operator step-up case (21/22). Hosted Stripe test-mode readback, owner-command replay, authenticated billing UI and live charges were not re-run.",
+            "assertions": "On 2026-10-29T05:39Z local billing schema, Checkout and reconciliation probes passed again, as did fake-provider Stripe Checkout, reconciliation and inbox integration suites and the billing presentation unit. The Stripe refunds integration suite again failed its operator step-up case (21 pass, 1 fail) and is not a PASS command. Hosted Stripe test-mode readback, owner-command replay, authenticated billing UI and live charges were not re-run. No live Stripe charge was made.",
             "commandRef": null,
             "iteration": null,
             "seed": null,
             "evidenceRefs": [
               "internal/evidence/acceptance/M5/m5-current-20261029/README.md",
-              "internal/evidence/acceptance/M5/m5-current-20261029/digest-delta.json"
+              "internal/evidence/acceptance/M5/m5-current-20261029/digest-delta.json",
+              "internal/evidence/acceptance/local-rerun-20261029/billing-schema.log",
+              "internal/evidence/acceptance/local-rerun-20261029/billing-checkout.log",
+              "internal/evidence/acceptance/local-rerun-20261029/billing-reconciliation.log",
+              "internal/evidence/acceptance/local-rerun-20261029/stripe-checkout-integration.log",
+              "internal/evidence/acceptance/local-rerun-20261029/stripe-reconciliation-integration.log",
+              "internal/evidence/acceptance/local-rerun-20261029/stripe-inbox-integration.log",
+              "internal/evidence/acceptance/local-rerun-20261029/billing-presentation-unit.log",
+              "internal/evidence/acceptance/local-rerun-20261029/stripe-refunds-integration.log"
             ]
           }
         ],
@@ -12705,7 +12781,7 @@
             "exitCode": 0,
             "startedAt": null,
             "finishedAt": null,
-            "outputRef": "internal/evidence/acceptance/M5/m5-current-20261029/logs/contracts-billing-contracts.log"
+            "outputRef": "internal/evidence/acceptance/local-rerun-20261029/contracts-billing-contracts.log"
           },
           {
             "commandId": "billing-schema",
@@ -12715,7 +12791,7 @@
             "exitCode": 0,
             "startedAt": null,
             "finishedAt": null,
-            "outputRef": "internal/evidence/acceptance/M5/m5-current-20261029/logs/billing-schema.log"
+            "outputRef": "internal/evidence/acceptance/local-rerun-20261029/billing-schema.log"
           },
           {
             "commandId": "billing-checkout",
@@ -12725,7 +12801,7 @@
             "exitCode": 0,
             "startedAt": null,
             "finishedAt": null,
-            "outputRef": "internal/evidence/acceptance/M5/m5-current-20261029/logs/billing-checkout.log"
+            "outputRef": "internal/evidence/acceptance/local-rerun-20261029/billing-checkout.log"
           },
           {
             "commandId": "billing-reconciliation",
@@ -12735,7 +12811,7 @@
             "exitCode": 0,
             "startedAt": null,
             "finishedAt": null,
-            "outputRef": "internal/evidence/acceptance/M5/m5-current-20261029/logs/billing-reconciliation.log"
+            "outputRef": "internal/evidence/acceptance/local-rerun-20261029/billing-reconciliation.log"
           },
           {
             "commandId": "stripe-checkout-integration",
@@ -12745,7 +12821,7 @@
             "exitCode": 0,
             "startedAt": null,
             "finishedAt": null,
-            "outputRef": "internal/evidence/acceptance/M5/m5-current-20261029/logs/stripe-checkout-integration.log"
+            "outputRef": "internal/evidence/acceptance/local-rerun-20261029/stripe-checkout-integration.log"
           },
           {
             "commandId": "stripe-reconciliation-integration",
@@ -12755,7 +12831,7 @@
             "exitCode": 0,
             "startedAt": null,
             "finishedAt": null,
-            "outputRef": "internal/evidence/acceptance/M5/m5-current-20261029/logs/stripe-reconciliation-integration.log"
+            "outputRef": "internal/evidence/acceptance/local-rerun-20261029/stripe-reconciliation-integration.log"
           },
           {
             "commandId": "billing-presentation-unit",
@@ -12765,7 +12841,17 @@
             "exitCode": 0,
             "startedAt": null,
             "finishedAt": null,
-            "outputRef": "internal/evidence/acceptance/M5/m5-current-20261029/logs/billing-presentation-unit.log"
+            "outputRef": "internal/evidence/acceptance/local-rerun-20261029/billing-presentation-unit.log"
+          },
+          {
+            "commandId": "stripe-inbox-integration",
+            "invocation": "node --experimental-strip-types --test tests/integration/stripe-inbox.test.ts",
+            "environmentId": "m5-current-local-20261029",
+            "status": "PASS",
+            "exitCode": 0,
+            "startedAt": null,
+            "finishedAt": null,
+            "outputRef": "internal/evidence/acceptance/local-rerun-20261029/stripe-inbox-integration.log"
           }
         ],
         "coverage": {
@@ -12782,9 +12868,9 @@
             "severity": "P2",
             "status": "OPEN",
             "mandatoryCriterionAffected": false,
-            "summary": "stripe-refunds integration: deleting operator_step_ups did not reject the operator refund command while the optional two-factor policy is off. 21 of 22 tests passed. No live Stripe call was made, and the suite is not recorded as PASS.",
+            "summary": "stripe-refunds integration rerun at 2026-10-29T05:39:14Z: 21 pass and 1 fail. The operator step-up case still does not reject after operator_step_ups is deleted while optional two-factor policy is off (expected /factor|step.up/i). No live Stripe call was made, and the suite is not recorded as PASS.",
             "evidenceRefs": [
-              "internal/evidence/acceptance/M5/m5-current-20261029/logs/stripe-refunds-integration.log"
+              "internal/evidence/acceptance/local-rerun-20261029/stripe-refunds-integration.log"
             ]
           }
         ],
@@ -15280,7 +15366,7 @@
             "applicable": null,
             "result": "BLOCKED",
             "expected": "All required milestone profiles and independent whole-stage review pass.",
-            "observed": "Local operations, privileged, MFA, recovery, affiliate fixture, race, cash-affiliate and notification probes passed on disposable PostgreSQL. Real FirstPromoter account, campaign, hosted settlement and independent whole-stage review were not re-run.",
+            "observed": "On 2026-10-29T05:39Z local operations, privileged, MFA, recovery, affiliate fixture, affiliate database, race, cash-affiliate, notification and referral probes passed on disposable PostgreSQL. The referral probe recorded realAccountVerified false. Real FirstPromoter account, campaign, hosted settlement and independent whole-stage review were not re-run.",
             "assertions": null,
             "commandRef": null,
             "iteration": null,
@@ -15290,7 +15376,17 @@
               "internal/evidence/acceptance/M6/m6-current-20261029/logs/frozen-lock-install.log",
               "internal/evidence/acceptance/M6/m6-current-20261029/logs/typecheck.log",
               "internal/evidence/acceptance/M6/m6-current-20261029/logs/lint.log",
-              "internal/evidence/acceptance/M6/m6-current-20261029/logs/format-check.log"
+              "internal/evidence/acceptance/M6/m6-current-20261029/logs/format-check.log",
+              "internal/evidence/acceptance/local-rerun-20261029/m6-operations.log",
+              "internal/evidence/acceptance/local-rerun-20261029/m6-privileged.log",
+              "internal/evidence/acceptance/local-rerun-20261029/m6-mfa.log",
+              "internal/evidence/acceptance/local-rerun-20261029/m6-recovery.log",
+              "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate.log",
+              "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-db.log",
+              "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-races.log",
+              "internal/evidence/acceptance/local-rerun-20261029/m6-cash-affiliate.log",
+              "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-notifications.log",
+              "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-referral.log"
             ]
           },
           {
@@ -15302,7 +15398,7 @@
             "applicable": null,
             "result": "BLOCKED",
             "expected": "All required milestone profiles and independent whole-stage review pass.",
-            "observed": "Local operations, privileged, MFA, recovery, affiliate fixture, race, cash-affiliate and notification probes passed on disposable PostgreSQL. Real FirstPromoter account, campaign, hosted settlement and independent whole-stage review were not re-run.",
+            "observed": "On 2026-10-29T05:39Z local operations, privileged, MFA, recovery, affiliate fixture, affiliate database, race, cash-affiliate, notification and referral probes passed on disposable PostgreSQL. The referral probe recorded realAccountVerified false. Real FirstPromoter account, campaign, hosted settlement and independent whole-stage review were not re-run.",
             "assertions": null,
             "commandRef": null,
             "iteration": null,
@@ -15312,7 +15408,17 @@
               "internal/evidence/acceptance/M6/m6-current-20261029/logs/frozen-lock-install.log",
               "internal/evidence/acceptance/M6/m6-current-20261029/logs/typecheck.log",
               "internal/evidence/acceptance/M6/m6-current-20261029/logs/lint.log",
-              "internal/evidence/acceptance/M6/m6-current-20261029/logs/format-check.log"
+              "internal/evidence/acceptance/M6/m6-current-20261029/logs/format-check.log",
+              "internal/evidence/acceptance/local-rerun-20261029/m6-operations.log",
+              "internal/evidence/acceptance/local-rerun-20261029/m6-privileged.log",
+              "internal/evidence/acceptance/local-rerun-20261029/m6-mfa.log",
+              "internal/evidence/acceptance/local-rerun-20261029/m6-recovery.log",
+              "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate.log",
+              "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-db.log",
+              "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-races.log",
+              "internal/evidence/acceptance/local-rerun-20261029/m6-cash-affiliate.log",
+              "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-notifications.log",
+              "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-referral.log"
             ]
           },
           {
@@ -15324,7 +15430,7 @@
             "applicable": null,
             "result": "BLOCKED",
             "expected": "All required milestone profiles and independent whole-stage review pass.",
-            "observed": "Local operations, privileged, MFA, recovery, affiliate fixture, race, cash-affiliate and notification probes passed on disposable PostgreSQL. Real FirstPromoter account, campaign, hosted settlement and independent whole-stage review were not re-run.",
+            "observed": "On 2026-10-29T05:39Z local operations, privileged, MFA, recovery, affiliate fixture, affiliate database, race, cash-affiliate, notification and referral probes passed on disposable PostgreSQL. The referral probe recorded realAccountVerified false. Real FirstPromoter account, campaign, hosted settlement and independent whole-stage review were not re-run.",
             "assertions": null,
             "commandRef": null,
             "iteration": null,
@@ -15334,7 +15440,17 @@
               "internal/evidence/acceptance/M6/m6-current-20261029/logs/frozen-lock-install.log",
               "internal/evidence/acceptance/M6/m6-current-20261029/logs/typecheck.log",
               "internal/evidence/acceptance/M6/m6-current-20261029/logs/lint.log",
-              "internal/evidence/acceptance/M6/m6-current-20261029/logs/format-check.log"
+              "internal/evidence/acceptance/M6/m6-current-20261029/logs/format-check.log",
+              "internal/evidence/acceptance/local-rerun-20261029/m6-operations.log",
+              "internal/evidence/acceptance/local-rerun-20261029/m6-privileged.log",
+              "internal/evidence/acceptance/local-rerun-20261029/m6-mfa.log",
+              "internal/evidence/acceptance/local-rerun-20261029/m6-recovery.log",
+              "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate.log",
+              "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-db.log",
+              "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-races.log",
+              "internal/evidence/acceptance/local-rerun-20261029/m6-cash-affiliate.log",
+              "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-notifications.log",
+              "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-referral.log"
             ]
           },
           {
@@ -15346,7 +15462,7 @@
             "applicable": null,
             "result": "BLOCKED",
             "expected": "All required milestone profiles and independent whole-stage review pass.",
-            "observed": "Local operations, privileged, MFA, recovery, affiliate fixture, race, cash-affiliate and notification probes passed on disposable PostgreSQL. Real FirstPromoter account, campaign, hosted settlement and independent whole-stage review were not re-run.",
+            "observed": "On 2026-10-29T05:39Z local operations, privileged, MFA, recovery, affiliate fixture, affiliate database, race, cash-affiliate, notification and referral probes passed on disposable PostgreSQL. The referral probe recorded realAccountVerified false. Real FirstPromoter account, campaign, hosted settlement and independent whole-stage review were not re-run.",
             "assertions": null,
             "commandRef": null,
             "iteration": null,
@@ -15356,7 +15472,17 @@
               "internal/evidence/acceptance/M6/m6-current-20261029/logs/frozen-lock-install.log",
               "internal/evidence/acceptance/M6/m6-current-20261029/logs/typecheck.log",
               "internal/evidence/acceptance/M6/m6-current-20261029/logs/lint.log",
-              "internal/evidence/acceptance/M6/m6-current-20261029/logs/format-check.log"
+              "internal/evidence/acceptance/M6/m6-current-20261029/logs/format-check.log",
+              "internal/evidence/acceptance/local-rerun-20261029/m6-operations.log",
+              "internal/evidence/acceptance/local-rerun-20261029/m6-privileged.log",
+              "internal/evidence/acceptance/local-rerun-20261029/m6-mfa.log",
+              "internal/evidence/acceptance/local-rerun-20261029/m6-recovery.log",
+              "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate.log",
+              "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-db.log",
+              "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-races.log",
+              "internal/evidence/acceptance/local-rerun-20261029/m6-cash-affiliate.log",
+              "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-notifications.log",
+              "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-referral.log"
             ]
           },
           {
@@ -15368,7 +15494,7 @@
             "applicable": null,
             "result": "BLOCKED",
             "expected": "All required milestone profiles and independent whole-stage review pass.",
-            "observed": "Local operations, privileged, MFA, recovery, affiliate fixture, race, cash-affiliate and notification probes passed on disposable PostgreSQL. Real FirstPromoter account, campaign, hosted settlement and independent whole-stage review were not re-run.",
+            "observed": "On 2026-10-29T05:39Z local operations, privileged, MFA, recovery, affiliate fixture, affiliate database, race, cash-affiliate, notification and referral probes passed on disposable PostgreSQL. The referral probe recorded realAccountVerified false. Real FirstPromoter account, campaign, hosted settlement and independent whole-stage review were not re-run.",
             "assertions": null,
             "commandRef": null,
             "iteration": null,
@@ -15378,7 +15504,17 @@
               "internal/evidence/acceptance/M6/m6-current-20261029/logs/frozen-lock-install.log",
               "internal/evidence/acceptance/M6/m6-current-20261029/logs/typecheck.log",
               "internal/evidence/acceptance/M6/m6-current-20261029/logs/lint.log",
-              "internal/evidence/acceptance/M6/m6-current-20261029/logs/format-check.log"
+              "internal/evidence/acceptance/M6/m6-current-20261029/logs/format-check.log",
+              "internal/evidence/acceptance/local-rerun-20261029/m6-operations.log",
+              "internal/evidence/acceptance/local-rerun-20261029/m6-privileged.log",
+              "internal/evidence/acceptance/local-rerun-20261029/m6-mfa.log",
+              "internal/evidence/acceptance/local-rerun-20261029/m6-recovery.log",
+              "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate.log",
+              "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-db.log",
+              "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-races.log",
+              "internal/evidence/acceptance/local-rerun-20261029/m6-cash-affiliate.log",
+              "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-notifications.log",
+              "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-referral.log"
             ]
           }
         ],
@@ -15430,13 +15566,23 @@
             "result": "BLOCKED",
             "expected": null,
             "observed": null,
-            "assertions": "Local operations, privileged, MFA, recovery, affiliate fixture, race, cash-affiliate and notification probes passed on disposable PostgreSQL. Real FirstPromoter account, campaign, hosted settlement and independent whole-stage review were not re-run.",
+            "assertions": "On 2026-10-29T05:39Z local operations, privileged, MFA, recovery, affiliate fixture, affiliate database, race, cash-affiliate, notification and referral probes passed on disposable PostgreSQL. The referral probe recorded realAccountVerified false. Real FirstPromoter account, campaign, hosted settlement and independent whole-stage review were not re-run.",
             "commandRef": null,
             "iteration": null,
             "seed": null,
             "evidenceRefs": [
               "internal/evidence/acceptance/M6/m6-current-20261029/README.md",
-              "internal/evidence/acceptance/M6/m6-current-20261029/digest-delta.json"
+              "internal/evidence/acceptance/M6/m6-current-20261029/digest-delta.json",
+              "internal/evidence/acceptance/local-rerun-20261029/m6-operations.log",
+              "internal/evidence/acceptance/local-rerun-20261029/m6-privileged.log",
+              "internal/evidence/acceptance/local-rerun-20261029/m6-mfa.log",
+              "internal/evidence/acceptance/local-rerun-20261029/m6-recovery.log",
+              "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate.log",
+              "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-db.log",
+              "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-races.log",
+              "internal/evidence/acceptance/local-rerun-20261029/m6-cash-affiliate.log",
+              "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-notifications.log",
+              "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-referral.log"
             ]
           }
         ],
@@ -16233,7 +16379,7 @@
             "exitCode": 0,
             "startedAt": null,
             "finishedAt": null,
-            "outputRef": "internal/evidence/acceptance/M6/m6-current-20261029/logs/contracts-billing-contracts.log"
+            "outputRef": "internal/evidence/acceptance/local-rerun-20261029/contracts-billing-contracts.log"
           },
           {
             "commandId": "billing-schema",
@@ -16243,7 +16389,7 @@
             "exitCode": 0,
             "startedAt": null,
             "finishedAt": null,
-            "outputRef": "internal/evidence/acceptance/M6/m6-current-20261029/logs/billing-schema.log"
+            "outputRef": "internal/evidence/acceptance/local-rerun-20261029/billing-schema.log"
           },
           {
             "commandId": "m6-operations",
@@ -16253,7 +16399,7 @@
             "exitCode": 0,
             "startedAt": null,
             "finishedAt": null,
-            "outputRef": "internal/evidence/acceptance/M6/m6-current-20261029/logs/m6-operations.log"
+            "outputRef": "internal/evidence/acceptance/local-rerun-20261029/m6-operations.log"
           },
           {
             "commandId": "m6-privileged",
@@ -16263,7 +16409,7 @@
             "exitCode": 0,
             "startedAt": null,
             "finishedAt": null,
-            "outputRef": "internal/evidence/acceptance/M6/m6-current-20261029/logs/m6-privileged.log"
+            "outputRef": "internal/evidence/acceptance/local-rerun-20261029/m6-privileged.log"
           },
           {
             "commandId": "m6-mfa",
@@ -16273,7 +16419,7 @@
             "exitCode": 0,
             "startedAt": null,
             "finishedAt": null,
-            "outputRef": "internal/evidence/acceptance/M6/m6-current-20261029/logs/m6-mfa.log"
+            "outputRef": "internal/evidence/acceptance/local-rerun-20261029/m6-mfa.log"
           },
           {
             "commandId": "m6-recovery",
@@ -16283,7 +16429,7 @@
             "exitCode": 0,
             "startedAt": null,
             "finishedAt": null,
-            "outputRef": "internal/evidence/acceptance/M6/m6-current-20261029/logs/m6-recovery.log"
+            "outputRef": "internal/evidence/acceptance/local-rerun-20261029/m6-recovery.log"
           },
           {
             "commandId": "m6-affiliate",
@@ -16293,7 +16439,7 @@
             "exitCode": 0,
             "startedAt": null,
             "finishedAt": null,
-            "outputRef": "internal/evidence/acceptance/M6/m6-current-20261029/logs/m6-affiliate.log"
+            "outputRef": "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate.log"
           },
           {
             "commandId": "m6-affiliate-db",
@@ -16303,7 +16449,7 @@
             "exitCode": 0,
             "startedAt": null,
             "finishedAt": null,
-            "outputRef": "internal/evidence/acceptance/M6/m6-current-20261029/logs/m6-affiliate-db.log"
+            "outputRef": "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-db.log"
           },
           {
             "commandId": "m6-affiliate-races",
@@ -16313,7 +16459,7 @@
             "exitCode": 0,
             "startedAt": null,
             "finishedAt": null,
-            "outputRef": "internal/evidence/acceptance/M6/m6-current-20261029/logs/m6-affiliate-races.log"
+            "outputRef": "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-races.log"
           },
           {
             "commandId": "m6-cash-affiliate",
@@ -16323,7 +16469,7 @@
             "exitCode": 0,
             "startedAt": null,
             "finishedAt": null,
-            "outputRef": "internal/evidence/acceptance/M6/m6-current-20261029/logs/m6-cash-affiliate.log"
+            "outputRef": "internal/evidence/acceptance/local-rerun-20261029/m6-cash-affiliate.log"
           },
           {
             "commandId": "m6-affiliate-notifications",
@@ -16333,7 +16479,17 @@
             "exitCode": 0,
             "startedAt": null,
             "finishedAt": null,
-            "outputRef": "internal/evidence/acceptance/M6/m6-current-20261029/logs/m6-affiliate-notifications.log"
+            "outputRef": "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-notifications.log"
+          },
+          {
+            "commandId": "m6-affiliate-referral",
+            "invocation": "node --env-file=.env.local --experimental-strip-types scripts/probe-m6-affiliate-referral.ts",
+            "environmentId": "m6-current-local-20261029",
+            "status": "PASS",
+            "exitCode": 0,
+            "startedAt": null,
+            "finishedAt": null,
+            "outputRef": "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-referral.log"
           }
         ],
         "coverage": {

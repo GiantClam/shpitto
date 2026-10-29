@@ -8,7 +8,7 @@
   "status": "IN_PROGRESS",
   "candidateId": "m6-current-20261029",
   "createdAt": "2026-10-29T04:05:00.000Z",
-  "updatedAt": "2026-10-29T04:05:00.000Z",
+  "updatedAt": "2026-10-29T05:40:58.702Z",
   "policy": {
     "path": "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md",
     "sha256": "3e31e7cb16379171305c558b80dddb930b26fbfa46147cc0d5c6aa319ef64a40"
@@ -142,13 +142,23 @@
       "mandatory": true,
       "result": "BLOCKED",
       "expected": "All required milestone profiles and independent whole-stage review pass.",
-      "observed": "Local operations, privileged, MFA, recovery, affiliate fixture, race, cash-affiliate and notification probes passed on disposable PostgreSQL. Real FirstPromoter account, campaign, hosted settlement and independent whole-stage review were not re-run.",
+      "observed": "On 2026-10-29T05:39Z local operations, privileged, MFA, recovery, affiliate fixture, affiliate database, race, cash-affiliate, notification and referral probes passed on disposable PostgreSQL. The referral probe recorded realAccountVerified false. Real FirstPromoter account, campaign, hosted settlement and independent whole-stage review were not re-run.",
       "evidenceRefs": [
         "internal/evidence/acceptance/M6/m6-current-20261029/README.md",
         "internal/evidence/acceptance/M6/m6-current-20261029/logs/frozen-lock-install.log",
         "internal/evidence/acceptance/M6/m6-current-20261029/logs/typecheck.log",
         "internal/evidence/acceptance/M6/m6-current-20261029/logs/lint.log",
-        "internal/evidence/acceptance/M6/m6-current-20261029/logs/format-check.log"
+        "internal/evidence/acceptance/M6/m6-current-20261029/logs/format-check.log",
+        "internal/evidence/acceptance/local-rerun-20261029/m6-operations.log",
+        "internal/evidence/acceptance/local-rerun-20261029/m6-privileged.log",
+        "internal/evidence/acceptance/local-rerun-20261029/m6-mfa.log",
+        "internal/evidence/acceptance/local-rerun-20261029/m6-recovery.log",
+        "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate.log",
+        "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-db.log",
+        "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-races.log",
+        "internal/evidence/acceptance/local-rerun-20261029/m6-cash-affiliate.log",
+        "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-notifications.log",
+        "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-referral.log"
       ]
     },
     {
@@ -156,13 +166,23 @@
       "mandatory": true,
       "result": "BLOCKED",
       "expected": "All required milestone profiles and independent whole-stage review pass.",
-      "observed": "Local operations, privileged, MFA, recovery, affiliate fixture, race, cash-affiliate and notification probes passed on disposable PostgreSQL. Real FirstPromoter account, campaign, hosted settlement and independent whole-stage review were not re-run.",
+      "observed": "On 2026-10-29T05:39Z local operations, privileged, MFA, recovery, affiliate fixture, affiliate database, race, cash-affiliate, notification and referral probes passed on disposable PostgreSQL. The referral probe recorded realAccountVerified false. Real FirstPromoter account, campaign, hosted settlement and independent whole-stage review were not re-run.",
       "evidenceRefs": [
         "internal/evidence/acceptance/M6/m6-current-20261029/README.md",
         "internal/evidence/acceptance/M6/m6-current-20261029/logs/frozen-lock-install.log",
         "internal/evidence/acceptance/M6/m6-current-20261029/logs/typecheck.log",
         "internal/evidence/acceptance/M6/m6-current-20261029/logs/lint.log",
-        "internal/evidence/acceptance/M6/m6-current-20261029/logs/format-check.log"
+        "internal/evidence/acceptance/M6/m6-current-20261029/logs/format-check.log",
+        "internal/evidence/acceptance/local-rerun-20261029/m6-operations.log",
+        "internal/evidence/acceptance/local-rerun-20261029/m6-privileged.log",
+        "internal/evidence/acceptance/local-rerun-20261029/m6-mfa.log",
+        "internal/evidence/acceptance/local-rerun-20261029/m6-recovery.log",
+        "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate.log",
+        "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-db.log",
+        "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-races.log",
+        "internal/evidence/acceptance/local-rerun-20261029/m6-cash-affiliate.log",
+        "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-notifications.log",
+        "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-referral.log"
       ]
     },
     {
@@ -170,13 +190,23 @@
       "mandatory": true,
       "result": "BLOCKED",
       "expected": "All required milestone profiles and independent whole-stage review pass.",
-      "observed": "Local operations, privileged, MFA, recovery, affiliate fixture, race, cash-affiliate and notification probes passed on disposable PostgreSQL. Real FirstPromoter account, campaign, hosted settlement and independent whole-stage review were not re-run.",
+      "observed": "On 2026-10-29T05:39Z local operations, privileged, MFA, recovery, affiliate fixture, affiliate database, race, cash-affiliate, notification and referral probes passed on disposable PostgreSQL. The referral probe recorded realAccountVerified false. Real FirstPromoter account, campaign, hosted settlement and independent whole-stage review were not re-run.",
       "evidenceRefs": [
         "internal/evidence/acceptance/M6/m6-current-20261029/README.md",
         "internal/evidence/acceptance/M6/m6-current-20261029/logs/frozen-lock-install.log",
         "internal/evidence/acceptance/M6/m6-current-20261029/logs/typecheck.log",
         "internal/evidence/acceptance/M6/m6-current-20261029/logs/lint.log",
-        "internal/evidence/acceptance/M6/m6-current-20261029/logs/format-check.log"
+        "internal/evidence/acceptance/M6/m6-current-20261029/logs/format-check.log",
+        "internal/evidence/acceptance/local-rerun-20261029/m6-operations.log",
+        "internal/evidence/acceptance/local-rerun-20261029/m6-privileged.log",
+        "internal/evidence/acceptance/local-rerun-20261029/m6-mfa.log",
+        "internal/evidence/acceptance/local-rerun-20261029/m6-recovery.log",
+        "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate.log",
+        "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-db.log",
+        "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-races.log",
+        "internal/evidence/acceptance/local-rerun-20261029/m6-cash-affiliate.log",
+        "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-notifications.log",
+        "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-referral.log"
       ]
     },
     {
@@ -184,13 +214,23 @@
       "mandatory": true,
       "result": "BLOCKED",
       "expected": "All required milestone profiles and independent whole-stage review pass.",
-      "observed": "Local operations, privileged, MFA, recovery, affiliate fixture, race, cash-affiliate and notification probes passed on disposable PostgreSQL. Real FirstPromoter account, campaign, hosted settlement and independent whole-stage review were not re-run.",
+      "observed": "On 2026-10-29T05:39Z local operations, privileged, MFA, recovery, affiliate fixture, affiliate database, race, cash-affiliate, notification and referral probes passed on disposable PostgreSQL. The referral probe recorded realAccountVerified false. Real FirstPromoter account, campaign, hosted settlement and independent whole-stage review were not re-run.",
       "evidenceRefs": [
         "internal/evidence/acceptance/M6/m6-current-20261029/README.md",
         "internal/evidence/acceptance/M6/m6-current-20261029/logs/frozen-lock-install.log",
         "internal/evidence/acceptance/M6/m6-current-20261029/logs/typecheck.log",
         "internal/evidence/acceptance/M6/m6-current-20261029/logs/lint.log",
-        "internal/evidence/acceptance/M6/m6-current-20261029/logs/format-check.log"
+        "internal/evidence/acceptance/M6/m6-current-20261029/logs/format-check.log",
+        "internal/evidence/acceptance/local-rerun-20261029/m6-operations.log",
+        "internal/evidence/acceptance/local-rerun-20261029/m6-privileged.log",
+        "internal/evidence/acceptance/local-rerun-20261029/m6-mfa.log",
+        "internal/evidence/acceptance/local-rerun-20261029/m6-recovery.log",
+        "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate.log",
+        "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-db.log",
+        "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-races.log",
+        "internal/evidence/acceptance/local-rerun-20261029/m6-cash-affiliate.log",
+        "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-notifications.log",
+        "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-referral.log"
       ]
     },
     {
@@ -198,13 +238,23 @@
       "mandatory": true,
       "result": "BLOCKED",
       "expected": "All required milestone profiles and independent whole-stage review pass.",
-      "observed": "Local operations, privileged, MFA, recovery, affiliate fixture, race, cash-affiliate and notification probes passed on disposable PostgreSQL. Real FirstPromoter account, campaign, hosted settlement and independent whole-stage review were not re-run.",
+      "observed": "On 2026-10-29T05:39Z local operations, privileged, MFA, recovery, affiliate fixture, affiliate database, race, cash-affiliate, notification and referral probes passed on disposable PostgreSQL. The referral probe recorded realAccountVerified false. Real FirstPromoter account, campaign, hosted settlement and independent whole-stage review were not re-run.",
       "evidenceRefs": [
         "internal/evidence/acceptance/M6/m6-current-20261029/README.md",
         "internal/evidence/acceptance/M6/m6-current-20261029/logs/frozen-lock-install.log",
         "internal/evidence/acceptance/M6/m6-current-20261029/logs/typecheck.log",
         "internal/evidence/acceptance/M6/m6-current-20261029/logs/lint.log",
-        "internal/evidence/acceptance/M6/m6-current-20261029/logs/format-check.log"
+        "internal/evidence/acceptance/M6/m6-current-20261029/logs/format-check.log",
+        "internal/evidence/acceptance/local-rerun-20261029/m6-operations.log",
+        "internal/evidence/acceptance/local-rerun-20261029/m6-privileged.log",
+        "internal/evidence/acceptance/local-rerun-20261029/m6-mfa.log",
+        "internal/evidence/acceptance/local-rerun-20261029/m6-recovery.log",
+        "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate.log",
+        "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-db.log",
+        "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-races.log",
+        "internal/evidence/acceptance/local-rerun-20261029/m6-cash-affiliate.log",
+        "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-notifications.log",
+        "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-referral.log"
       ]
     }
   ],
@@ -241,10 +291,20 @@
       "standard": "complete-stage-evidence",
       "applicable": true,
       "result": "BLOCKED",
-      "assertions": "Local operations, privileged, MFA, recovery, affiliate fixture, race, cash-affiliate and notification probes passed on disposable PostgreSQL. Real FirstPromoter account, campaign, hosted settlement and independent whole-stage review were not re-run.",
+      "assertions": "On 2026-10-29T05:39Z local operations, privileged, MFA, recovery, affiliate fixture, affiliate database, race, cash-affiliate, notification and referral probes passed on disposable PostgreSQL. The referral probe recorded realAccountVerified false. Real FirstPromoter account, campaign, hosted settlement and independent whole-stage review were not re-run.",
       "evidenceRefs": [
         "internal/evidence/acceptance/M6/m6-current-20261029/README.md",
-        "internal/evidence/acceptance/M6/m6-current-20261029/digest-delta.json"
+        "internal/evidence/acceptance/M6/m6-current-20261029/digest-delta.json",
+        "internal/evidence/acceptance/local-rerun-20261029/m6-operations.log",
+        "internal/evidence/acceptance/local-rerun-20261029/m6-privileged.log",
+        "internal/evidence/acceptance/local-rerun-20261029/m6-mfa.log",
+        "internal/evidence/acceptance/local-rerun-20261029/m6-recovery.log",
+        "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate.log",
+        "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-db.log",
+        "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-races.log",
+        "internal/evidence/acceptance/local-rerun-20261029/m6-cash-affiliate.log",
+        "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-notifications.log",
+        "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-referral.log"
       ]
     }
   ],
@@ -904,122 +964,133 @@
       "commandId": "contracts-billing-contracts",
       "invocation": "node --experimental-strip-types --test tests/contracts/billing-contracts.test.ts",
       "environmentId": "m6-current-local-20261029",
-      "startAt": "2026-10-29T04:00:42.286Z",
-      "endAt": "2026-10-29T04:00:42.403Z",
+      "startAt": "2026-10-29T05:39:10.455Z",
+      "endAt": "2026-10-29T05:39:10.585Z",
       "exitCode": 0,
       "signal": null,
       "status": "PASS",
-      "outputRef": "internal/evidence/acceptance/M6/m6-current-20261029/logs/contracts-billing-contracts.log"
+      "outputRef": "internal/evidence/acceptance/local-rerun-20261029/contracts-billing-contracts.log"
     },
     {
       "commandId": "billing-schema",
       "invocation": "node --env-file=.env.local --experimental-strip-types scripts/probe-billing-schema.ts",
       "environmentId": "m6-current-local-20261029",
-      "startAt": "2026-10-29T04:00:42.404Z",
-      "endAt": "2026-10-29T04:00:43.275Z",
+      "startAt": "2026-10-29T05:39:06.997Z",
+      "endAt": "2026-10-29T05:39:08.461Z",
       "exitCode": 0,
       "signal": null,
       "status": "PASS",
-      "outputRef": "internal/evidence/acceptance/M6/m6-current-20261029/logs/billing-schema.log"
+      "outputRef": "internal/evidence/acceptance/local-rerun-20261029/billing-schema.log"
     },
     {
       "commandId": "m6-operations",
       "invocation": "node --env-file=.env.local --experimental-strip-types scripts/probe-m6-operations.ts",
       "environmentId": "m6-current-local-20261029",
-      "startAt": "2026-10-29T04:00:50.255Z",
-      "endAt": "2026-10-29T04:00:51.178Z",
+      "startAt": "2026-10-29T05:39:16.148Z",
+      "endAt": "2026-10-29T05:39:17.109Z",
       "exitCode": 0,
       "signal": null,
       "status": "PASS",
-      "outputRef": "internal/evidence/acceptance/M6/m6-current-20261029/logs/m6-operations.log"
+      "outputRef": "internal/evidence/acceptance/local-rerun-20261029/m6-operations.log"
     },
     {
       "commandId": "m6-privileged",
       "invocation": "node --env-file=.env.local --experimental-strip-types scripts/probe-m6-privileged.ts",
       "environmentId": "m6-current-local-20261029",
-      "startAt": "2026-10-29T04:00:51.179Z",
-      "endAt": "2026-10-29T04:00:52.220Z",
+      "startAt": "2026-10-29T05:39:17.110Z",
+      "endAt": "2026-10-29T05:39:18.201Z",
       "exitCode": 0,
       "signal": null,
       "status": "PASS",
-      "outputRef": "internal/evidence/acceptance/M6/m6-current-20261029/logs/m6-privileged.log"
+      "outputRef": "internal/evidence/acceptance/local-rerun-20261029/m6-privileged.log"
     },
     {
       "commandId": "m6-mfa",
       "invocation": "node --env-file=.env.local --experimental-strip-types scripts/probe-m6-two-factor.ts",
       "environmentId": "m6-current-local-20261029",
-      "startAt": "2026-10-29T04:00:52.222Z",
-      "endAt": "2026-10-29T04:00:53.785Z",
+      "startAt": "2026-10-29T05:39:18.202Z",
+      "endAt": "2026-10-29T05:39:19.970Z",
       "exitCode": 0,
       "signal": null,
       "status": "PASS",
-      "outputRef": "internal/evidence/acceptance/M6/m6-current-20261029/logs/m6-mfa.log"
+      "outputRef": "internal/evidence/acceptance/local-rerun-20261029/m6-mfa.log"
     },
     {
       "commandId": "m6-recovery",
       "invocation": "node --env-file=.env.local --experimental-strip-types scripts/probe-m6-recovery.ts",
       "environmentId": "m6-current-local-20261029",
-      "startAt": "2026-10-29T04:00:53.787Z",
-      "endAt": "2026-10-29T04:00:54.486Z",
+      "startAt": "2026-10-29T05:39:19.971Z",
+      "endAt": "2026-10-29T05:39:20.778Z",
       "exitCode": 0,
       "signal": null,
       "status": "PASS",
-      "outputRef": "internal/evidence/acceptance/M6/m6-current-20261029/logs/m6-recovery.log"
+      "outputRef": "internal/evidence/acceptance/local-rerun-20261029/m6-recovery.log"
     },
     {
       "commandId": "m6-affiliate",
       "invocation": "node --env-file=.env.local --experimental-strip-types scripts/probe-m6-affiliate.ts",
       "environmentId": "m6-current-local-20261029",
-      "startAt": "2026-10-29T04:00:54.488Z",
-      "endAt": "2026-10-29T04:00:54.560Z",
+      "startAt": "2026-10-29T05:39:20.779Z",
+      "endAt": "2026-10-29T05:39:20.856Z",
       "exitCode": 0,
       "signal": null,
       "status": "PASS",
-      "outputRef": "internal/evidence/acceptance/M6/m6-current-20261029/logs/m6-affiliate.log"
+      "outputRef": "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate.log"
     },
     {
       "commandId": "m6-affiliate-db",
       "invocation": "node --env-file=.env.local --experimental-strip-types scripts/probe-m6-affiliate-db.ts",
       "environmentId": "m6-current-local-20261029",
-      "startAt": "2026-10-29T04:00:54.561Z",
-      "endAt": "2026-10-29T04:00:55.713Z",
+      "startAt": "2026-10-29T05:39:20.857Z",
+      "endAt": "2026-10-29T05:39:22.257Z",
       "exitCode": 0,
       "signal": null,
       "status": "PASS",
-      "outputRef": "internal/evidence/acceptance/M6/m6-current-20261029/logs/m6-affiliate-db.log"
+      "outputRef": "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-db.log"
     },
     {
       "commandId": "m6-affiliate-races",
       "invocation": "node --env-file=.env.local --experimental-strip-types scripts/probe-m6-affiliate-races.ts",
       "environmentId": "m6-current-local-20261029",
-      "startAt": "2026-10-29T04:00:55.715Z",
-      "endAt": "2026-10-29T04:00:59.290Z",
+      "startAt": "2026-10-29T05:39:22.257Z",
+      "endAt": "2026-10-29T05:39:26.488Z",
       "exitCode": 0,
       "signal": null,
       "status": "PASS",
-      "outputRef": "internal/evidence/acceptance/M6/m6-current-20261029/logs/m6-affiliate-races.log"
+      "outputRef": "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-races.log"
     },
     {
       "commandId": "m6-cash-affiliate",
       "invocation": "node --env-file=.env.local --experimental-strip-types scripts/probe-m6-cash-affiliate.ts",
       "environmentId": "m6-current-local-20261029",
-      "startAt": "2026-10-29T04:00:59.291Z",
-      "endAt": "2026-10-29T04:01:00.204Z",
+      "startAt": "2026-10-29T05:39:26.489Z",
+      "endAt": "2026-10-29T05:39:27.495Z",
       "exitCode": 0,
       "signal": null,
       "status": "PASS",
-      "outputRef": "internal/evidence/acceptance/M6/m6-current-20261029/logs/m6-cash-affiliate.log"
+      "outputRef": "internal/evidence/acceptance/local-rerun-20261029/m6-cash-affiliate.log"
     },
     {
       "commandId": "m6-affiliate-notifications",
       "invocation": "node --env-file=.env.local --experimental-strip-types scripts/probe-m6-affiliate-notifications.ts",
       "environmentId": "m6-current-local-20261029",
-      "startAt": "2026-10-29T04:01:00.206Z",
-      "endAt": "2026-10-29T04:01:01.138Z",
+      "startAt": "2026-10-29T05:39:27.496Z",
+      "endAt": "2026-10-29T05:39:28.588Z",
       "exitCode": 0,
       "signal": null,
       "status": "PASS",
-      "outputRef": "internal/evidence/acceptance/M6/m6-current-20261029/logs/m6-affiliate-notifications.log"
+      "outputRef": "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-notifications.log"
+    },
+    {
+      "commandId": "m6-affiliate-referral",
+      "invocation": "node --env-file=.env.local --experimental-strip-types scripts/probe-m6-affiliate-referral.ts",
+      "environmentId": "m6-current-local-20261029",
+      "startAt": "2026-10-29T05:39:28.589Z",
+      "endAt": "2026-10-29T05:39:29.422Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-referral.log"
     }
   ],
   "coverage": {
@@ -1090,10 +1161,7 @@
     "currentM3Applicability": "STALE",
     "requiredReruns": [
       "Independent review of current M3 applicability before any equivalence carry.",
-      "Authentic provider matrix and hosted recovery without an unauthorized paid create.",
-      "Hosted Stripe acceptance-profile lifecycle, refund readback and owner-command replay.",
-      "Repair or explicitly reclassify the local Stripe refund step-up failure before claiming that suite.",
-      "Real FirstPromoter account and hosted settlement evidence.",
+      "Real FirstPromoter account and hosted settlement evidence. The 2026-10-29 local affiliate, database, and recovery probes do not close that account row. The M4 four-path rows and selected self-hosted recovery drill do not close M6.",
       "Recompute owned-module branch coverage on this digest before a coverage PASS claim."
     ],
     "carriedEvidence": []
@@ -1126,7 +1194,8 @@
       "m6-affiliate-db",
       "m6-affiliate-races",
       "m6-cash-affiliate",
-      "m6-affiliate-notifications"
+      "m6-affiliate-notifications",
+      "m6-affiliate-referral"
     ],
     "failedNotClaimed": [],
     "notRerun": [
@@ -1142,8 +1211,124 @@
   "limitations": [
     "This record rebinds development evidence to the current digests. It does not promote the stage to PASS or READY_FOR_REVIEW.",
     "Current M3 applicability is STALE. The historical M3 PASS record was not modified.",
-    "Hosted web health was ready. Worker health was ready with creates disabled at 2026-10-29T04:04:19Z, and a later deployment of the same commit was BUILDING. Recovery-monitor ready output was not re-read.",
+    "The digest-refresh worker health read at 2026-10-29T04:04:19Z predates the later M4 recovery drill. That drill re-read the recovery-monitor ready body and is M4 evidence; it does not close M6.",
     "No paid provider create, live Stripe charge, refund, payout, or FirstPromoter write was performed.",
     "Stripe acceptance-profile and FirstPromoter account rows were not re-run."
-  ]
+  ],
+  "localFixtureRerun": {
+    "closesStage": false,
+    "liveStripe": false,
+    "firstPromoterWrite": false,
+    "realAccountVerified": false,
+    "commands": [
+      {
+        "commandId": "billing-schema",
+        "invocation": "node --env-file=.env.local --experimental-strip-types scripts/probe-billing-schema.ts",
+        "outputRef": "internal/evidence/acceptance/local-rerun-20261029/billing-schema.log",
+        "startAt": "2026-10-29T05:39:06.997Z",
+        "endAt": "2026-10-29T05:39:08.461Z",
+        "exitCode": 0,
+        "status": "PASS"
+      },
+      {
+        "commandId": "contracts-billing-contracts",
+        "invocation": "node --experimental-strip-types --test tests/contracts/billing-contracts.test.ts",
+        "outputRef": "internal/evidence/acceptance/local-rerun-20261029/contracts-billing-contracts.log",
+        "startAt": "2026-10-29T05:39:10.455Z",
+        "endAt": "2026-10-29T05:39:10.585Z",
+        "exitCode": 0,
+        "status": "PASS"
+      },
+      {
+        "commandId": "m6-operations",
+        "invocation": "node --env-file=.env.local --experimental-strip-types scripts/probe-m6-operations.ts",
+        "outputRef": "internal/evidence/acceptance/local-rerun-20261029/m6-operations.log",
+        "startAt": "2026-10-29T05:39:16.148Z",
+        "endAt": "2026-10-29T05:39:17.109Z",
+        "exitCode": 0,
+        "status": "PASS"
+      },
+      {
+        "commandId": "m6-privileged",
+        "invocation": "node --env-file=.env.local --experimental-strip-types scripts/probe-m6-privileged.ts",
+        "outputRef": "internal/evidence/acceptance/local-rerun-20261029/m6-privileged.log",
+        "startAt": "2026-10-29T05:39:17.110Z",
+        "endAt": "2026-10-29T05:39:18.201Z",
+        "exitCode": 0,
+        "status": "PASS"
+      },
+      {
+        "commandId": "m6-mfa",
+        "invocation": "node --env-file=.env.local --experimental-strip-types scripts/probe-m6-two-factor.ts",
+        "outputRef": "internal/evidence/acceptance/local-rerun-20261029/m6-mfa.log",
+        "startAt": "2026-10-29T05:39:18.202Z",
+        "endAt": "2026-10-29T05:39:19.970Z",
+        "exitCode": 0,
+        "status": "PASS"
+      },
+      {
+        "commandId": "m6-recovery",
+        "invocation": "node --env-file=.env.local --experimental-strip-types scripts/probe-m6-recovery.ts",
+        "outputRef": "internal/evidence/acceptance/local-rerun-20261029/m6-recovery.log",
+        "startAt": "2026-10-29T05:39:19.971Z",
+        "endAt": "2026-10-29T05:39:20.778Z",
+        "exitCode": 0,
+        "status": "PASS"
+      },
+      {
+        "commandId": "m6-affiliate",
+        "invocation": "node --env-file=.env.local --experimental-strip-types scripts/probe-m6-affiliate.ts",
+        "outputRef": "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate.log",
+        "startAt": "2026-10-29T05:39:20.779Z",
+        "endAt": "2026-10-29T05:39:20.856Z",
+        "exitCode": 0,
+        "status": "PASS"
+      },
+      {
+        "commandId": "m6-affiliate-db",
+        "invocation": "node --env-file=.env.local --experimental-strip-types scripts/probe-m6-affiliate-db.ts",
+        "outputRef": "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-db.log",
+        "startAt": "2026-10-29T05:39:20.857Z",
+        "endAt": "2026-10-29T05:39:22.257Z",
+        "exitCode": 0,
+        "status": "PASS"
+      },
+      {
+        "commandId": "m6-affiliate-races",
+        "invocation": "node --env-file=.env.local --experimental-strip-types scripts/probe-m6-affiliate-races.ts",
+        "outputRef": "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-races.log",
+        "startAt": "2026-10-29T05:39:22.257Z",
+        "endAt": "2026-10-29T05:39:26.488Z",
+        "exitCode": 0,
+        "status": "PASS"
+      },
+      {
+        "commandId": "m6-cash-affiliate",
+        "invocation": "node --env-file=.env.local --experimental-strip-types scripts/probe-m6-cash-affiliate.ts",
+        "outputRef": "internal/evidence/acceptance/local-rerun-20261029/m6-cash-affiliate.log",
+        "startAt": "2026-10-29T05:39:26.489Z",
+        "endAt": "2026-10-29T05:39:27.495Z",
+        "exitCode": 0,
+        "status": "PASS"
+      },
+      {
+        "commandId": "m6-affiliate-notifications",
+        "invocation": "node --env-file=.env.local --experimental-strip-types scripts/probe-m6-affiliate-notifications.ts",
+        "outputRef": "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-notifications.log",
+        "startAt": "2026-10-29T05:39:27.496Z",
+        "endAt": "2026-10-29T05:39:28.588Z",
+        "exitCode": 0,
+        "status": "PASS"
+      },
+      {
+        "commandId": "m6-affiliate-referral",
+        "invocation": "node --env-file=.env.local --experimental-strip-types scripts/probe-m6-affiliate-referral.ts",
+        "outputRef": "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-referral.log",
+        "startAt": "2026-10-29T05:39:28.589Z",
+        "endAt": "2026-10-29T05:39:29.422Z",
+        "exitCode": 0,
+        "status": "PASS"
+      }
+    ]
+  }
 }

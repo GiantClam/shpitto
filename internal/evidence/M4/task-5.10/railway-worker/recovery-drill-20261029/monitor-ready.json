@@ -1,0 +1,9 @@
+{
+  "status": "ready",
+  "role": "recovery-monitor",
+  "mode": "observe",
+  "providerCreatesEnabled": false,
+  "lastSuccessAt": "2026-10-29T05:35:11.920Z",
+  "errors": 35,
+  "deliveryPending": false
+}

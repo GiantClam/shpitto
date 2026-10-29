@@ -8,7 +8,7 @@
   "status": "IN_PROGRESS",
   "candidateId": "m5-current-20261029",
   "createdAt": "2026-10-29T04:05:00.000Z",
-  "updatedAt": "2026-10-29T04:05:00.000Z",
+  "updatedAt": "2026-10-29T05:40:58.702Z",
   "policy": {
     "path": "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md",
     "sha256": "3e31e7cb16379171305c558b80dddb930b26fbfa46147cc0d5c6aa319ef64a40"
@@ -122,13 +122,21 @@
       "mandatory": true,
       "result": "BLOCKED",
       "expected": "All required milestone profiles and independent whole-stage review pass.",
-      "observed": "Local billing schema, Checkout and reconciliation probes passed, as did fake-provider Stripe Checkout and reconciliation integration suites and the billing presentation unit. The Stripe refunds integration suite failed its operator step-up case (21/22). Hosted Stripe test-mode readback, owner-command replay, authenticated billing UI and live charges were not re-run.",
+      "observed": "On 2026-10-29T05:39Z local billing schema, Checkout and reconciliation probes passed again, as did fake-provider Stripe Checkout, reconciliation and inbox integration suites and the billing presentation unit. The Stripe refunds integration suite again failed its operator step-up case (21 pass, 1 fail) and is not a PASS command. Hosted Stripe test-mode readback, owner-command replay, authenticated billing UI and live charges were not re-run. No live Stripe charge was made.",
       "evidenceRefs": [
         "internal/evidence/acceptance/M5/m5-current-20261029/README.md",
         "internal/evidence/acceptance/M5/m5-current-20261029/logs/frozen-lock-install.log",
         "internal/evidence/acceptance/M5/m5-current-20261029/logs/typecheck.log",
         "internal/evidence/acceptance/M5/m5-current-20261029/logs/lint.log",
-        "internal/evidence/acceptance/M5/m5-current-20261029/logs/format-check.log"
+        "internal/evidence/acceptance/M5/m5-current-20261029/logs/format-check.log",
+        "internal/evidence/acceptance/local-rerun-20261029/billing-schema.log",
+        "internal/evidence/acceptance/local-rerun-20261029/billing-checkout.log",
+        "internal/evidence/acceptance/local-rerun-20261029/billing-reconciliation.log",
+        "internal/evidence/acceptance/local-rerun-20261029/stripe-checkout-integration.log",
+        "internal/evidence/acceptance/local-rerun-20261029/stripe-reconciliation-integration.log",
+        "internal/evidence/acceptance/local-rerun-20261029/stripe-inbox-integration.log",
+        "internal/evidence/acceptance/local-rerun-20261029/billing-presentation-unit.log",
+        "internal/evidence/acceptance/local-rerun-20261029/stripe-refunds-integration.log"
       ]
     },
     {
@@ -136,13 +144,21 @@
       "mandatory": true,
       "result": "BLOCKED",
       "expected": "All required milestone profiles and independent whole-stage review pass.",
-      "observed": "Local billing schema, Checkout and reconciliation probes passed, as did fake-provider Stripe Checkout and reconciliation integration suites and the billing presentation unit. The Stripe refunds integration suite failed its operator step-up case (21/22). Hosted Stripe test-mode readback, owner-command replay, authenticated billing UI and live charges were not re-run.",
+      "observed": "On 2026-10-29T05:39Z local billing schema, Checkout and reconciliation probes passed again, as did fake-provider Stripe Checkout, reconciliation and inbox integration suites and the billing presentation unit. The Stripe refunds integration suite again failed its operator step-up case (21 pass, 1 fail) and is not a PASS command. Hosted Stripe test-mode readback, owner-command replay, authenticated billing UI and live charges were not re-run. No live Stripe charge was made.",
       "evidenceRefs": [
         "internal/evidence/acceptance/M5/m5-current-20261029/README.md",
         "internal/evidence/acceptance/M5/m5-current-20261029/logs/frozen-lock-install.log",
         "internal/evidence/acceptance/M5/m5-current-20261029/logs/typecheck.log",
         "internal/evidence/acceptance/M5/m5-current-20261029/logs/lint.log",
-        "internal/evidence/acceptance/M5/m5-current-20261029/logs/format-check.log"
+        "internal/evidence/acceptance/M5/m5-current-20261029/logs/format-check.log",
+        "internal/evidence/acceptance/local-rerun-20261029/billing-schema.log",
+        "internal/evidence/acceptance/local-rerun-20261029/billing-checkout.log",
+        "internal/evidence/acceptance/local-rerun-20261029/billing-reconciliation.log",
+        "internal/evidence/acceptance/local-rerun-20261029/stripe-checkout-integration.log",
+        "internal/evidence/acceptance/local-rerun-20261029/stripe-reconciliation-integration.log",
+        "internal/evidence/acceptance/local-rerun-20261029/stripe-inbox-integration.log",
+        "internal/evidence/acceptance/local-rerun-20261029/billing-presentation-unit.log",
+        "internal/evidence/acceptance/local-rerun-20261029/stripe-refunds-integration.log"
       ]
     },
     {
@@ -150,13 +166,21 @@
       "mandatory": true,
       "result": "BLOCKED",
       "expected": "All required milestone profiles and independent whole-stage review pass.",
-      "observed": "Local billing schema, Checkout and reconciliation probes passed, as did fake-provider Stripe Checkout and reconciliation integration suites and the billing presentation unit. The Stripe refunds integration suite failed its operator step-up case (21/22). Hosted Stripe test-mode readback, owner-command replay, authenticated billing UI and live charges were not re-run.",
+      "observed": "On 2026-10-29T05:39Z local billing schema, Checkout and reconciliation probes passed again, as did fake-provider Stripe Checkout, reconciliation and inbox integration suites and the billing presentation unit. The Stripe refunds integration suite again failed its operator step-up case (21 pass, 1 fail) and is not a PASS command. Hosted Stripe test-mode readback, owner-command replay, authenticated billing UI and live charges were not re-run. No live Stripe charge was made.",
       "evidenceRefs": [
         "internal/evidence/acceptance/M5/m5-current-20261029/README.md",
         "internal/evidence/acceptance/M5/m5-current-20261029/logs/frozen-lock-install.log",
         "internal/evidence/acceptance/M5/m5-current-20261029/logs/typecheck.log",
         "internal/evidence/acceptance/M5/m5-current-20261029/logs/lint.log",
-        "internal/evidence/acceptance/M5/m5-current-20261029/logs/format-check.log"
+        "internal/evidence/acceptance/M5/m5-current-20261029/logs/format-check.log",
+        "internal/evidence/acceptance/local-rerun-20261029/billing-schema.log",
+        "internal/evidence/acceptance/local-rerun-20261029/billing-checkout.log",
+        "internal/evidence/acceptance/local-rerun-20261029/billing-reconciliation.log",
+        "internal/evidence/acceptance/local-rerun-20261029/stripe-checkout-integration.log",
+        "internal/evidence/acceptance/local-rerun-20261029/stripe-reconciliation-integration.log",
+        "internal/evidence/acceptance/local-rerun-20261029/stripe-inbox-integration.log",
+        "internal/evidence/acceptance/local-rerun-20261029/billing-presentation-unit.log",
+        "internal/evidence/acceptance/local-rerun-20261029/stripe-refunds-integration.log"
       ]
     },
     {
@@ -164,13 +188,21 @@
       "mandatory": true,
       "result": "BLOCKED",
       "expected": "All required milestone profiles and independent whole-stage review pass.",
-      "observed": "Local billing schema, Checkout and reconciliation probes passed, as did fake-provider Stripe Checkout and reconciliation integration suites and the billing presentation unit. The Stripe refunds integration suite failed its operator step-up case (21/22). Hosted Stripe test-mode readback, owner-command replay, authenticated billing UI and live charges were not re-run.",
+      "observed": "On 2026-10-29T05:39Z local billing schema, Checkout and reconciliation probes passed again, as did fake-provider Stripe Checkout, reconciliation and inbox integration suites and the billing presentation unit. The Stripe refunds integration suite again failed its operator step-up case (21 pass, 1 fail) and is not a PASS command. Hosted Stripe test-mode readback, owner-command replay, authenticated billing UI and live charges were not re-run. No live Stripe charge was made.",
       "evidenceRefs": [
         "internal/evidence/acceptance/M5/m5-current-20261029/README.md",
         "internal/evidence/acceptance/M5/m5-current-20261029/logs/frozen-lock-install.log",
         "internal/evidence/acceptance/M5/m5-current-20261029/logs/typecheck.log",
         "internal/evidence/acceptance/M5/m5-current-20261029/logs/lint.log",
-        "internal/evidence/acceptance/M5/m5-current-20261029/logs/format-check.log"
+        "internal/evidence/acceptance/M5/m5-current-20261029/logs/format-check.log",
+        "internal/evidence/acceptance/local-rerun-20261029/billing-schema.log",
+        "internal/evidence/acceptance/local-rerun-20261029/billing-checkout.log",
+        "internal/evidence/acceptance/local-rerun-20261029/billing-reconciliation.log",
+        "internal/evidence/acceptance/local-rerun-20261029/stripe-checkout-integration.log",
+        "internal/evidence/acceptance/local-rerun-20261029/stripe-reconciliation-integration.log",
+        "internal/evidence/acceptance/local-rerun-20261029/stripe-inbox-integration.log",
+        "internal/evidence/acceptance/local-rerun-20261029/billing-presentation-unit.log",
+        "internal/evidence/acceptance/local-rerun-20261029/stripe-refunds-integration.log"
       ]
     },
     {
@@ -178,13 +210,21 @@
       "mandatory": true,
       "result": "BLOCKED",
       "expected": "All required milestone profiles and independent whole-stage review pass.",
-      "observed": "Local billing schema, Checkout and reconciliation probes passed, as did fake-provider Stripe Checkout and reconciliation integration suites and the billing presentation unit. The Stripe refunds integration suite failed its operator step-up case (21/22). Hosted Stripe test-mode readback, owner-command replay, authenticated billing UI and live charges were not re-run.",
+      "observed": "On 2026-10-29T05:39Z local billing schema, Checkout and reconciliation probes passed again, as did fake-provider Stripe Checkout, reconciliation and inbox integration suites and the billing presentation unit. The Stripe refunds integration suite again failed its operator step-up case (21 pass, 1 fail) and is not a PASS command. Hosted Stripe test-mode readback, owner-command replay, authenticated billing UI and live charges were not re-run. No live Stripe charge was made.",
       "evidenceRefs": [
         "internal/evidence/acceptance/M5/m5-current-20261029/README.md",
         "internal/evidence/acceptance/M5/m5-current-20261029/logs/frozen-lock-install.log",
         "internal/evidence/acceptance/M5/m5-current-20261029/logs/typecheck.log",
         "internal/evidence/acceptance/M5/m5-current-20261029/logs/lint.log",
-        "internal/evidence/acceptance/M5/m5-current-20261029/logs/format-check.log"
+        "internal/evidence/acceptance/M5/m5-current-20261029/logs/format-check.log",
+        "internal/evidence/acceptance/local-rerun-20261029/billing-schema.log",
+        "internal/evidence/acceptance/local-rerun-20261029/billing-checkout.log",
+        "internal/evidence/acceptance/local-rerun-20261029/billing-reconciliation.log",
+        "internal/evidence/acceptance/local-rerun-20261029/stripe-checkout-integration.log",
+        "internal/evidence/acceptance/local-rerun-20261029/stripe-reconciliation-integration.log",
+        "internal/evidence/acceptance/local-rerun-20261029/stripe-inbox-integration.log",
+        "internal/evidence/acceptance/local-rerun-20261029/billing-presentation-unit.log",
+        "internal/evidence/acceptance/local-rerun-20261029/stripe-refunds-integration.log"
       ]
     }
   ],
@@ -217,10 +257,18 @@
       "standard": "complete-stage-evidence",
       "applicable": true,
       "result": "BLOCKED",
-      "assertions": "Local billing schema, Checkout and reconciliation probes passed, as did fake-provider Stripe Checkout and reconciliation integration suites and the billing presentation unit. The Stripe refunds integration suite failed its operator step-up case (21/22). Hosted Stripe test-mode readback, owner-command replay, authenticated billing UI and live charges were not re-run.",
+      "assertions": "On 2026-10-29T05:39Z local billing schema, Checkout and reconciliation probes passed again, as did fake-provider Stripe Checkout, reconciliation and inbox integration suites and the billing presentation unit. The Stripe refunds integration suite again failed its operator step-up case (21 pass, 1 fail) and is not a PASS command. Hosted Stripe test-mode readback, owner-command replay, authenticated billing UI and live charges were not re-run. No live Stripe charge was made.",
       "evidenceRefs": [
         "internal/evidence/acceptance/M5/m5-current-20261029/README.md",
-        "internal/evidence/acceptance/M5/m5-current-20261029/digest-delta.json"
+        "internal/evidence/acceptance/M5/m5-current-20261029/digest-delta.json",
+        "internal/evidence/acceptance/local-rerun-20261029/billing-schema.log",
+        "internal/evidence/acceptance/local-rerun-20261029/billing-checkout.log",
+        "internal/evidence/acceptance/local-rerun-20261029/billing-reconciliation.log",
+        "internal/evidence/acceptance/local-rerun-20261029/stripe-checkout-integration.log",
+        "internal/evidence/acceptance/local-rerun-20261029/stripe-reconciliation-integration.log",
+        "internal/evidence/acceptance/local-rerun-20261029/stripe-inbox-integration.log",
+        "internal/evidence/acceptance/local-rerun-20261029/billing-presentation-unit.log",
+        "internal/evidence/acceptance/local-rerun-20261029/stripe-refunds-integration.log"
       ]
     }
   ],
@@ -809,78 +857,89 @@
       "commandId": "contracts-billing-contracts",
       "invocation": "node --experimental-strip-types --test tests/contracts/billing-contracts.test.ts",
       "environmentId": "m5-current-local-20261029",
-      "startAt": "2026-10-29T04:00:42.286Z",
-      "endAt": "2026-10-29T04:00:42.403Z",
+      "startAt": "2026-10-29T05:39:10.455Z",
+      "endAt": "2026-10-29T05:39:10.585Z",
       "exitCode": 0,
       "signal": null,
       "status": "PASS",
-      "outputRef": "internal/evidence/acceptance/M5/m5-current-20261029/logs/contracts-billing-contracts.log"
+      "outputRef": "internal/evidence/acceptance/local-rerun-20261029/contracts-billing-contracts.log"
     },
     {
       "commandId": "billing-schema",
       "invocation": "node --env-file=.env.local --experimental-strip-types scripts/probe-billing-schema.ts",
       "environmentId": "m5-current-local-20261029",
-      "startAt": "2026-10-29T04:00:42.404Z",
-      "endAt": "2026-10-29T04:00:43.275Z",
+      "startAt": "2026-10-29T05:39:06.997Z",
+      "endAt": "2026-10-29T05:39:08.461Z",
       "exitCode": 0,
       "signal": null,
       "status": "PASS",
-      "outputRef": "internal/evidence/acceptance/M5/m5-current-20261029/logs/billing-schema.log"
+      "outputRef": "internal/evidence/acceptance/local-rerun-20261029/billing-schema.log"
     },
     {
       "commandId": "billing-checkout",
       "invocation": "node --env-file=.env.local --experimental-strip-types scripts/probe-billing-checkout.ts",
       "environmentId": "m5-current-local-20261029",
-      "startAt": "2026-10-29T04:00:43.277Z",
-      "endAt": "2026-10-29T04:00:44.067Z",
+      "startAt": "2026-10-29T05:39:08.462Z",
+      "endAt": "2026-10-29T05:39:09.338Z",
       "exitCode": 0,
       "signal": null,
       "status": "PASS",
-      "outputRef": "internal/evidence/acceptance/M5/m5-current-20261029/logs/billing-checkout.log"
+      "outputRef": "internal/evidence/acceptance/local-rerun-20261029/billing-checkout.log"
     },
     {
       "commandId": "billing-reconciliation",
       "invocation": "node --env-file=.env.local --experimental-strip-types scripts/probe-billing-reconciliation.ts",
       "environmentId": "m5-current-local-20261029",
-      "startAt": "2026-10-29T04:00:44.069Z",
-      "endAt": "2026-10-29T04:00:45.077Z",
+      "startAt": "2026-10-29T05:39:09.338Z",
+      "endAt": "2026-10-29T05:39:10.454Z",
       "exitCode": 0,
       "signal": null,
       "status": "PASS",
-      "outputRef": "internal/evidence/acceptance/M5/m5-current-20261029/logs/billing-reconciliation.log"
+      "outputRef": "internal/evidence/acceptance/local-rerun-20261029/billing-reconciliation.log"
     },
     {
       "commandId": "stripe-checkout-integration",
       "invocation": "node --experimental-strip-types --test tests/integration/stripe-checkout.test.ts",
       "environmentId": "m5-current-local-20261029",
-      "startAt": "2026-10-29T04:00:45.079Z",
-      "endAt": "2026-10-29T04:00:46.232Z",
+      "startAt": "2026-10-29T05:39:10.585Z",
+      "endAt": "2026-10-29T05:39:11.803Z",
       "exitCode": 0,
       "signal": null,
       "status": "PASS",
-      "outputRef": "internal/evidence/acceptance/M5/m5-current-20261029/logs/stripe-checkout-integration.log"
+      "outputRef": "internal/evidence/acceptance/local-rerun-20261029/stripe-checkout-integration.log"
     },
     {
       "commandId": "stripe-reconciliation-integration",
       "invocation": "node --experimental-strip-types --test tests/integration/stripe-reconciliation.test.ts",
       "environmentId": "m5-current-local-20261029",
-      "startAt": "2026-10-29T04:00:46.234Z",
-      "endAt": "2026-10-29T04:00:47.804Z",
+      "startAt": "2026-10-29T05:39:11.803Z",
+      "endAt": "2026-10-29T05:39:13.474Z",
       "exitCode": 0,
       "signal": null,
       "status": "PASS",
-      "outputRef": "internal/evidence/acceptance/M5/m5-current-20261029/logs/stripe-reconciliation-integration.log"
+      "outputRef": "internal/evidence/acceptance/local-rerun-20261029/stripe-reconciliation-integration.log"
     },
     {
       "commandId": "billing-presentation-unit",
       "invocation": "node --experimental-strip-types --test tests/unit/billing-presentation.test.ts",
       "environmentId": "m5-current-local-20261029",
-      "startAt": "2026-10-29T04:00:49.400Z",
-      "endAt": "2026-10-29T04:00:49.525Z",
+      "startAt": "2026-10-29T05:39:14.414Z",
+      "endAt": "2026-10-29T05:39:14.533Z",
       "exitCode": 0,
       "signal": null,
       "status": "PASS",
-      "outputRef": "internal/evidence/acceptance/M5/m5-current-20261029/logs/billing-presentation-unit.log"
+      "outputRef": "internal/evidence/acceptance/local-rerun-20261029/billing-presentation-unit.log"
+    },
+    {
+      "commandId": "stripe-inbox-integration",
+      "invocation": "node --experimental-strip-types --test tests/integration/stripe-inbox.test.ts",
+      "environmentId": "m5-current-local-20261029",
+      "startAt": "2026-10-29T05:39:13.474Z",
+      "endAt": "2026-10-29T05:39:14.414Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/local-rerun-20261029/stripe-inbox-integration.log"
     }
   ],
   "coverage": {
@@ -897,9 +956,9 @@
       "severity": "P2",
       "status": "OPEN",
       "mandatoryCriterionAffected": false,
-      "summary": "stripe-refunds integration: deleting operator_step_ups did not reject the operator refund command while the optional two-factor policy is off. 21 of 22 tests passed. No live Stripe call was made, and the suite is not recorded as PASS.",
+      "summary": "stripe-refunds integration rerun at 2026-10-29T05:39:14Z: 21 pass and 1 fail. The operator step-up case still does not reject after operator_step_ups is deleted while optional two-factor policy is off (expected /factor|step.up/i). No live Stripe call was made, and the suite is not recorded as PASS.",
       "evidenceRefs": [
-        "internal/evidence/acceptance/M5/m5-current-20261029/logs/stripe-refunds-integration.log"
+        "internal/evidence/acceptance/local-rerun-20261029/stripe-refunds-integration.log"
       ]
     }
   ],
@@ -972,8 +1031,7 @@
     "currentM3Applicability": "STALE",
     "requiredReruns": [
       "Independent review of current M3 applicability before any equivalence carry.",
-      "Authentic provider matrix and hosted recovery without an unauthorized paid create.",
-      "Hosted Stripe acceptance-profile lifecycle, refund readback and owner-command replay.",
+      "Hosted Stripe acceptance-profile lifecycle, refund readback and owner-command replay. The 2026-10-29 M4 four-path rows and selected self-hosted recovery drill do not close M5.",
       "Repair or explicitly reclassify the local Stripe refund step-up failure before claiming that suite.",
       "Real FirstPromoter account and hosted settlement evidence.",
       "Recompute owned-module branch coverage on this digest before a coverage PASS claim."
@@ -1004,7 +1062,8 @@
       "billing-reconciliation",
       "stripe-checkout-integration",
       "stripe-reconciliation-integration",
-      "billing-presentation-unit"
+      "billing-presentation-unit",
+      "stripe-inbox-integration"
     ],
     "failedNotClaimed": [
       "stripe-refunds-integration"
@@ -1022,8 +1081,96 @@
   "limitations": [
     "This record rebinds development evidence to the current digests. It does not promote the stage to PASS or READY_FOR_REVIEW.",
     "Current M3 applicability is STALE. The historical M3 PASS record was not modified.",
-    "Hosted web health was ready. Worker health was ready with creates disabled at 2026-10-29T04:04:19Z, and a later deployment of the same commit was BUILDING. Recovery-monitor ready output was not re-read.",
+    "The digest-refresh worker health read at 2026-10-29T04:04:19Z predates the later M4 recovery drill. That drill re-read the recovery-monitor ready body and is M4 evidence; it does not close M5.",
     "No paid provider create, live Stripe charge, refund, payout, or FirstPromoter write was performed.",
-    "The local Stripe refunds suite is a retained failure, not a PASS command."
-  ]
+    "The 2026-10-29T05:39Z local Stripe refunds suite is a retained failure (21 pass, 1 fail), not a PASS command. No live Stripe charge was made."
+  ],
+  "localFixtureRerun": {
+    "closesStage": false,
+    "liveStripe": false,
+    "firstPromoterWrite": false,
+    "commands": [
+      {
+        "commandId": "billing-schema",
+        "invocation": "node --env-file=.env.local --experimental-strip-types scripts/probe-billing-schema.ts",
+        "outputRef": "internal/evidence/acceptance/local-rerun-20261029/billing-schema.log",
+        "startAt": "2026-10-29T05:39:06.997Z",
+        "endAt": "2026-10-29T05:39:08.461Z",
+        "exitCode": 0,
+        "status": "PASS"
+      },
+      {
+        "commandId": "billing-checkout",
+        "invocation": "node --env-file=.env.local --experimental-strip-types scripts/probe-billing-checkout.ts",
+        "outputRef": "internal/evidence/acceptance/local-rerun-20261029/billing-checkout.log",
+        "startAt": "2026-10-29T05:39:08.462Z",
+        "endAt": "2026-10-29T05:39:09.338Z",
+        "exitCode": 0,
+        "status": "PASS"
+      },
+      {
+        "commandId": "billing-reconciliation",
+        "invocation": "node --env-file=.env.local --experimental-strip-types scripts/probe-billing-reconciliation.ts",
+        "outputRef": "internal/evidence/acceptance/local-rerun-20261029/billing-reconciliation.log",
+        "startAt": "2026-10-29T05:39:09.338Z",
+        "endAt": "2026-10-29T05:39:10.454Z",
+        "exitCode": 0,
+        "status": "PASS"
+      },
+      {
+        "commandId": "contracts-billing-contracts",
+        "invocation": "node --experimental-strip-types --test tests/contracts/billing-contracts.test.ts",
+        "outputRef": "internal/evidence/acceptance/local-rerun-20261029/contracts-billing-contracts.log",
+        "startAt": "2026-10-29T05:39:10.455Z",
+        "endAt": "2026-10-29T05:39:10.585Z",
+        "exitCode": 0,
+        "status": "PASS"
+      },
+      {
+        "commandId": "stripe-checkout-integration",
+        "invocation": "node --experimental-strip-types --test tests/integration/stripe-checkout.test.ts",
+        "outputRef": "internal/evidence/acceptance/local-rerun-20261029/stripe-checkout-integration.log",
+        "startAt": "2026-10-29T05:39:10.585Z",
+        "endAt": "2026-10-29T05:39:11.803Z",
+        "exitCode": 0,
+        "status": "PASS"
+      },
+      {
+        "commandId": "stripe-reconciliation-integration",
+        "invocation": "node --experimental-strip-types --test tests/integration/stripe-reconciliation.test.ts",
+        "outputRef": "internal/evidence/acceptance/local-rerun-20261029/stripe-reconciliation-integration.log",
+        "startAt": "2026-10-29T05:39:11.803Z",
+        "endAt": "2026-10-29T05:39:13.474Z",
+        "exitCode": 0,
+        "status": "PASS"
+      },
+      {
+        "commandId": "stripe-inbox-integration",
+        "invocation": "node --experimental-strip-types --test tests/integration/stripe-inbox.test.ts",
+        "outputRef": "internal/evidence/acceptance/local-rerun-20261029/stripe-inbox-integration.log",
+        "startAt": "2026-10-29T05:39:13.474Z",
+        "endAt": "2026-10-29T05:39:14.414Z",
+        "exitCode": 0,
+        "status": "PASS"
+      },
+      {
+        "commandId": "billing-presentation-unit",
+        "invocation": "node --experimental-strip-types --test tests/unit/billing-presentation.test.ts",
+        "outputRef": "internal/evidence/acceptance/local-rerun-20261029/billing-presentation-unit.log",
+        "startAt": "2026-10-29T05:39:14.414Z",
+        "endAt": "2026-10-29T05:39:14.533Z",
+        "exitCode": 0,
+        "status": "PASS"
+      },
+      {
+        "commandId": "stripe-refunds-integration",
+        "invocation": "node --experimental-strip-types --test tests/integration/stripe-refunds.test.ts",
+        "outputRef": "internal/evidence/acceptance/local-rerun-20261029/stripe-refunds-integration.log",
+        "startAt": "2026-10-29T05:39:14.533Z",
+        "endAt": "2026-10-29T05:39:16.148Z",
+        "exitCode": 1,
+        "status": "FAIL"
+      }
+    ]
+  }
 }

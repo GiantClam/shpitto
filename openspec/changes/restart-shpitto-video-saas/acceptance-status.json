@@ -270,7 +270,7 @@
         "integratorId": null,
         "decidedAt": null,
         "recordRef": "internal/evidence/acceptance/M4/m4-current-20261029/record.json",
-        "reason": "Current-candidate local verification was rerun and rebound. The 2026-10-29 hosted four-path create/settle/verify is recorded and does not close M4. Hosted recovery, negative callback and financial idempotence, deadline and sweep evidence, recovery-monitor ready output, Stripe acceptance, FirstPromoter and independent review remain open. Provider cost is UNKNOWN. Current M3 applicability is STALE."
+        "reason": "The 2026-10-29 hosted four-path create and the selected self-hosted recovery drill are recorded and do not close M4. Recovery-monitor ready output was re-read after the drill. Web SHPITTO_RECOVERY_* observe recipient env was missing at drill start and restored mid-drill before delivery. Negative callback and financial idempotence, numeric deadline and probe configuration, storage-failure fault suites, Stripe acceptance, FirstPromoter, coverage and independent review remain open. Provider cost is UNKNOWN. Current M3 applicability is STALE."
       }
     },
     {
@@ -322,7 +322,7 @@
         "integratorDecision": "NOT_RUN",
         "integratorId": null,
         "decidedAt": null,
-        "reason": "Current-candidate local verification was rerun and rebound. Hosted provider, Stripe acceptance, FirstPromoter and independent review remain open. Current M3 applicability is STALE.",
+        "reason": "Fixture-only local billing probes were rerun at 2026-10-29T05:39Z. Schema, Checkout, reconciliation, fake-provider Stripe Checkout, reconciliation, inbox, and billing presentation passed. Stripe refunds integration remains 21 pass and 1 fail and is not PASS. Hosted Stripe acceptance, live charges, FirstPromoter and independent review remain open. Current M3 applicability is STALE. This does not close M5.",
         "taskReviewRef": "internal/evidence/acceptance/M5/m5-current-20261029/record.json",
         "recordRef": "internal/evidence/acceptance/M5/m5-current-20261029/record.json"
       }
@@ -373,7 +373,7 @@
         "integratorId": null,
         "decidedAt": null,
         "recordRef": "internal/evidence/acceptance/M6/m6-current-20261029/record.json",
-        "reason": "Current-candidate local verification was rerun and rebound. Hosted provider, Stripe acceptance, FirstPromoter and independent review remain open. Current M3 applicability is STALE."
+        "reason": "Fixture-only local operations, privileged, MFA, recovery, affiliate, database, race, cash-affiliate, notification and referral probes passed at 2026-10-29T05:39Z. The referral probe recorded realAccountVerified false. Real FirstPromoter account, hosted settlement and independent review remain open. Current M3 applicability is STALE. This does not close M6."
       },
       "localImplementation": {
         "status": "COMPLETE",

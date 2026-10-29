@@ -94,23 +94,23 @@
       "commandId": "contracts-billing-contracts",
       "invocation": "node --experimental-strip-types --test tests/contracts/billing-contracts.test.ts",
       "environmentId": "m4-current-local-20261029",
-      "startAt": "2026-10-29T04:00:42.286Z",
-      "endAt": "2026-10-29T04:00:42.403Z",
+      "startAt": "2026-10-29T05:39:10.455Z",
+      "endAt": "2026-10-29T05:39:10.585Z",
       "exitCode": 0,
       "signal": null,
       "status": "PASS",
-      "outputRef": "internal/evidence/acceptance/M4/m4-current-20261029/logs/contracts-billing-contracts.log"
+      "outputRef": "internal/evidence/acceptance/local-rerun-20261029/contracts-billing-contracts.log"
     },
     {
       "commandId": "billing-schema",
       "invocation": "node --env-file=.env.local --experimental-strip-types scripts/probe-billing-schema.ts",
       "environmentId": "m4-current-local-20261029",
-      "startAt": "2026-10-29T04:00:42.404Z",
-      "endAt": "2026-10-29T04:00:43.275Z",
+      "startAt": "2026-10-29T05:39:06.997Z",
+      "endAt": "2026-10-29T05:39:08.461Z",
       "exitCode": 0,
       "signal": null,
       "status": "PASS",
-      "outputRef": "internal/evidence/acceptance/M4/m4-current-20261029/logs/billing-schema.log"
+      "outputRef": "internal/evidence/acceptance/local-rerun-20261029/billing-schema.log"
     },
     {
       "commandId": "hosted-web-health",
@@ -133,6 +133,17 @@
       "signal": null,
       "status": "PASS",
       "outputRef": "internal/evidence/acceptance/M4/m4-current-20261029/logs/hosted-worker-health.log"
+    },
+    {
+      "commandId": "probe-provider-recovery",
+      "invocation": "node --experimental-strip-types scripts/probe-provider-recovery.ts",
+      "environmentId": "m4-current-local-20261029",
+      "startAt": "2026-10-29T05:39:06.857Z",
+      "endAt": "2026-10-29T05:39:06.996Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M4/m4-current-20261029/logs/probe-provider-recovery.log"
     }
   ]
 }

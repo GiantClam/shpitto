@@ -8,7 +8,7 @@
   "status": "IN_PROGRESS",
   "candidateId": "m4-current-20261029",
   "createdAt": "2026-10-29T04:05:00.000Z",
-  "updatedAt": "2026-10-29T04:56:00.000Z",
+  "updatedAt": "2026-10-29T05:40:58.702Z",
   "policy": {
     "path": "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md",
     "sha256": "3e31e7cb16379171305c558b80dddb930b26fbfa46147cc0d5c6aa319ef64a40"
@@ -179,8 +179,6 @@
       "probe, deadline, and alert configuration",
       "independent sweep or lease recovery",
       "storage-failure, expired-output, stale-ack, and late-after-refund fault suites",
-      "controlled restart or recovery drill",
-      "recovery-monitor ready body",
       "owned-module branch coverage on this digest",
       "current M3 equivalence",
       "independent whole-stage review",
@@ -293,6 +291,141 @@
       }
     ]
   },
+  "hostedRecoveryDrill": {
+    "status": "PASS_SELECTED_SELF_HOSTED_RECOVERY_DRILL",
+    "closesStage": false,
+    "verifiedAt": "2026-10-29T05:35:00Z",
+    "source": "Supplied hosted drill receipt, inspect and verify projections, and the recovery-monitor health body. This development refresh did not re-execute the hosted drill.",
+    "railway": {
+      "project": "shpitto-m4-staging",
+      "environment": "production",
+      "services": {
+        "web": "shpitto-m4-web",
+        "worker": "shpitto-m4-worker",
+        "monitor": "shpitto-m4-recovery-monitor"
+      },
+      "configuration": {
+        "projectBound": true,
+        "workerCreatesEnabled": false,
+        "workspaceScoped": true,
+        "secretValuesRecorded": false,
+        "webRecoveryAlertReceiverConfigured": true,
+        "monitorMode": "observe"
+      }
+    },
+    "runId": "9b0d0a5d-2bf7-4958-832e-40fef041dfb0",
+    "workspaceId": "fc4b6bb4-eccc-431e-ac49-bc8241bd1b90",
+    "incidentId": "9525d623-9d2b-4856-930c-ed43b30e62bf",
+    "phases": [
+      {
+        "phase": "prepare",
+        "exitCode": 0,
+        "stage": "prepared"
+      },
+      {
+        "phase": "seed-overdue",
+        "exitCode": 0,
+        "stage": "seeded",
+        "taskCount": 102,
+        "paidProviderRequests": 0
+      },
+      {
+        "phase": "inspect",
+        "exitCode": 0,
+        "taskCount": 102,
+        "failedCount": 102,
+        "releasedCount": 102
+      },
+      {
+        "phase": "verify",
+        "exitCode": 0,
+        "stage": "verified",
+        "taskCount": 102,
+        "failedCount": 102,
+        "releasedCount": 102,
+        "verified": true
+      }
+    ],
+    "recoveryAssertions": {
+      "workerPauseExceededHeartbeatStaleWindow": true,
+      "incidentDeliveredToOperatorReceipt": true,
+      "workerRestartedWithSameWorkspaceBinding": true,
+      "heartbeatRecoveredAfterRestart": true,
+      "unknownSubmissionFencePreserved": true,
+      "overdueTasksSettledBeforeFurtherDispatch": true,
+      "monitorReadyBodyReRead": true
+    },
+    "incidentTimeline": {
+      "id": "9525d623-9d2b-4856-930c-ed43b30e62bf",
+      "openedAt": "2026-10-29T05:07:01.137Z",
+      "recoveredAt": "2026-10-29T05:13:48.560Z",
+      "deliveredAt": "2026-10-29T05:30:22.109Z",
+      "ageSeconds": 180
+    },
+    "inspect": {
+      "stage": "seeded",
+      "verified": false,
+      "taskCount": 102,
+      "failedCount": 102,
+      "releasedCount": 102,
+      "evidenceRef": "internal/evidence/M4/task-5.10/railway-worker/recovery-drill-20261029/inspect.json"
+    },
+    "verify": {
+      "stage": "verified",
+      "verified": true,
+      "taskCount": 102,
+      "failedCount": 102,
+      "releasedCount": 102,
+      "paidProviderRequests": 0,
+      "evidenceRef": "internal/evidence/M4/task-5.10/railway-worker/recovery-drill-20261029/verify.json"
+    },
+    "workerAfterDrill": {
+      "state": "active",
+      "SHPITTO_PROVIDER_WORKER_ALLOW_CREATE": false,
+      "workspaceBindingRetained": true
+    },
+    "monitorHealthAfterDrill": {
+      "status": "ready",
+      "role": "recovery-monitor",
+      "mode": "observe",
+      "providerCreatesEnabled": false,
+      "lastSuccessAt": "2026-10-29T05:35:11.920Z",
+      "errors": 35,
+      "deliveryPending": false
+    },
+    "localDeterministicProviderRecovery": {
+      "status": "PASS",
+      "profile": "local deterministic provider fixtures",
+      "count": 4,
+      "suppliedSource": "Same-day aipc result recorded on the execution receipt.",
+      "rerun": {
+        "commandId": "probe-provider-recovery",
+        "invocation": "node --experimental-strip-types scripts/probe-provider-recovery.ts",
+        "outputRef": "internal/evidence/acceptance/M4/m4-current-20261029/logs/probe-provider-recovery.log",
+        "startAt": "2026-10-29T05:39:06.857Z",
+        "endAt": "2026-10-29T05:39:06.996Z",
+        "exitCode": 0,
+        "status": "PASS"
+      },
+      "note": "The local rerun includes one stale-callback rejection fixture. It does not close hosted forged, stale, or wrong-account callback acceptance."
+    },
+    "webRecoveryRecipientLimitation": "Web was missing the SHPITTO_RECOVERY_* observe recipient env at drill start. Mid-drill, secret, URL, workspace, key, mode=observe, and projectId were set on shpitto-m4-web so delivery could succeed. Secret values are not recorded.",
+    "limitations": [
+      "Selected self-hosted staging recovery drill with a fresh isolated workspace and fake-clock fixture tasks.",
+      "No provider create request was made by the recovery drill.",
+      "Provider billed cost remains UNKNOWN.",
+      "Web recovery-alert recipient env was missing at drill start; SHPITTO_RECOVERY_* observe binding was restored mid-drill before delivery succeeded.",
+      "Does not claim production email, commercial readiness, or later milestone gates."
+    ],
+    "evidenceRefs": [
+      "internal/evidence/M4/task-5.10/railway-worker/recovery-drill-20261029/recovery-execution-20261029.json",
+      "internal/evidence/M4/task-5.10/railway-worker/recovery-drill-20261029/recovery-drill-20261029.md",
+      "internal/evidence/M4/task-5.10/railway-worker/recovery-drill-20261029/inspect.json",
+      "internal/evidence/M4/task-5.10/railway-worker/recovery-drill-20261029/verify.json",
+      "internal/evidence/M4/task-5.10/railway-worker/recovery-drill-20261029/monitor-ready.json",
+      "internal/evidence/acceptance/M4/m4-current-20261029/logs/probe-provider-recovery.log"
+    ]
+  },
   "criterionResults": [
     {
       "criterionId": "M4-C01",
@@ -335,7 +468,7 @@
       "mandatory": true,
       "result": "BLOCKED",
       "expected": "All required milestone profiles and independent whole-stage review pass.",
-      "observed": "Local install, typecheck, lint, format, database boundary, OpenSpec, provider-input and billing-contract tests, billing schema probe and production build passed on this digest. Point-in-time public Acceptance web health and the then-active provider worker health were read with createsEnabled false. The 2026-10-29 hosted four-path create/settle/verify on Railway worker shpitto-m4-worker (production) is recorded in hostedFourPathCreate: one paid POST per path, stage verified, task succeeded, reservation consumed, quoted credits 10, private hash PASS, owner HTTP 200, outsider/wrong/expired token 403, authenticated account callback true, and provider cost status UNKNOWN. The fal T2V file stores task success under taskSuatus. After all four paths the worker was returned to STATE=paused and ALLOW_CREATE=false, and healthz confirmed state=paused and createsEnabled=false. Each retained row records automaticRetry false. Probe, deadline, and alert configuration, and an independent sweep or lease recovery drill, were not re-verified. This criterion stays BLOCKED.",
+      "observed": "Local install, typecheck, lint, format, database boundary, OpenSpec, provider-input and billing-contract tests, billing schema probe and production build passed on this digest. Point-in-time public Acceptance web health and the then-active provider worker health were read with createsEnabled false. The 2026-10-29 hosted four-path create/settle/verify on Railway worker shpitto-m4-worker (production) is recorded in hostedFourPathCreate: one paid POST per path, stage verified, task succeeded, reservation consumed, quoted credits 10, private hash PASS, owner HTTP 200, outsider/wrong/expired token 403, authenticated account callback true, and provider cost status UNKNOWN. The fal T2V file stores task success under taskSuatus. After all four paths the worker was returned to STATE=paused and ALLOW_CREATE=false, and healthz confirmed state=paused and createsEnabled=false. Each retained row records automaticRetry false. The 2026-10-29 selected self-hosted recovery drill is recorded in hostedRecoveryDrill: prepare, seed-overdue, inspect, and verify exited 0; verify.verified is true with 102 deadline_exceeded tasks and 102 reservations released; the unknown-submission fence was preserved; paidProviderRequests is 0. The worker restarted with the same workspace binding and was left active with SHPITTO_PROVIDER_WORKER_ALLOW_CREATE=false. The recovery-monitor /healthz ready body was re-read after the drill (status ready, mode observe, deliveryPending false, providerCreatesEnabled false, errors 35). Inspect remains the seeded projection with verified false. Numeric probe, deadline, and alert configuration, and lease fencing beyond this drill, were not established. This criterion stays BLOCKED.",
       "evidenceRefs": [
         "internal/evidence/acceptance/M4/m4-current-20261029/README.md",
         "internal/evidence/acceptance/M4/m4-current-20261029/logs/frozen-lock-install.log",
@@ -345,7 +478,13 @@
         "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261029/replicate-wan22-t2v_6e3d.json",
         "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261029/fal-wan22-t2v_68bb.json",
         "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261029/fal-wan22-i2v_bda3.json",
-        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261029/replicate-wan22-i2v_ee33.json"
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261029/replicate-wan22-i2v_ee33.json",
+        "internal/evidence/M4/task-5.10/railway-worker/recovery-drill-20261029/recovery-execution-20261029.json",
+        "internal/evidence/M4/task-5.10/railway-worker/recovery-drill-20261029/recovery-drill-20261029.md",
+        "internal/evidence/M4/task-5.10/railway-worker/recovery-drill-20261029/inspect.json",
+        "internal/evidence/M4/task-5.10/railway-worker/recovery-drill-20261029/verify.json",
+        "internal/evidence/M4/task-5.10/railway-worker/recovery-drill-20261029/monitor-ready.json",
+        "internal/evidence/acceptance/M4/m4-current-20261029/logs/probe-provider-recovery.log"
       ]
     },
     {
@@ -353,7 +492,7 @@
       "mandatory": true,
       "result": "BLOCKED",
       "expected": "All required milestone profiles and independent whole-stage review pass.",
-      "observed": "Local install, typecheck, lint, format, database boundary, OpenSpec, provider-input and billing-contract tests, billing schema probe and production build passed on this digest. Point-in-time public Acceptance web health and the then-active provider worker health were read with createsEnabled false. The 2026-10-29 hosted four-path create/settle/verify on Railway worker shpitto-m4-worker (production) is recorded in hostedFourPathCreate: one paid POST per path, stage verified, task succeeded, reservation consumed, quoted credits 10, private hash PASS, owner HTTP 200, outsider/wrong/expired token 403, authenticated account callback true, and provider cost status UNKNOWN. The fal T2V file stores task success under taskSuatus. After all four paths the worker was returned to STATE=paused and ALLOW_CREATE=false, and healthz confirmed state=paused and createsEnabled=false. Storage-failure, expired-output, stale-acknowledgement, and late-after-refund fault suites, and a controlled restart or recovery drill, were not re-verified. Recovery-monitor ready output was not re-read. This criterion stays BLOCKED.",
+      "observed": "Local install, typecheck, lint, format, database boundary, OpenSpec, provider-input and billing-contract tests, billing schema probe and production build passed on this digest. Point-in-time public Acceptance web health and the then-active provider worker health were read with createsEnabled false. The 2026-10-29 hosted four-path create/settle/verify on Railway worker shpitto-m4-worker (production) is recorded in hostedFourPathCreate: one paid POST per path, stage verified, task succeeded, reservation consumed, quoted credits 10, private hash PASS, owner HTTP 200, outsider/wrong/expired token 403, authenticated account callback true, and provider cost status UNKNOWN. The fal T2V file stores task success under taskSuatus. After all four paths the worker was returned to STATE=paused and ALLOW_CREATE=false, and healthz confirmed state=paused and createsEnabled=false. The controlled self-hosted restart and recovery drill is recorded in hostedRecoveryDrill and made no paid provider request. The recovery-monitor ready body was re-read after the drill. Storage-failure, expired-output, stale-acknowledgement, and late-after-refund fault suites were not re-verified. This criterion stays BLOCKED.",
       "evidenceRefs": [
         "internal/evidence/acceptance/M4/m4-current-20261029/README.md",
         "internal/evidence/acceptance/M4/m4-current-20261029/logs/frozen-lock-install.log",
@@ -363,7 +502,13 @@
         "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261029/replicate-wan22-t2v_6e3d.json",
         "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261029/fal-wan22-t2v_68bb.json",
         "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261029/fal-wan22-i2v_bda3.json",
-        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261029/replicate-wan22-i2v_ee33.json"
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261029/replicate-wan22-i2v_ee33.json",
+        "internal/evidence/M4/task-5.10/railway-worker/recovery-drill-20261029/recovery-execution-20261029.json",
+        "internal/evidence/M4/task-5.10/railway-worker/recovery-drill-20261029/recovery-drill-20261029.md",
+        "internal/evidence/M4/task-5.10/railway-worker/recovery-drill-20261029/inspect.json",
+        "internal/evidence/M4/task-5.10/railway-worker/recovery-drill-20261029/verify.json",
+        "internal/evidence/M4/task-5.10/railway-worker/recovery-drill-20261029/monitor-ready.json",
+        "internal/evidence/acceptance/M4/m4-current-20261029/logs/probe-provider-recovery.log"
       ]
     }
   ],
@@ -393,14 +538,20 @@
       "standard": "complete-stage-evidence",
       "applicable": true,
       "result": "BLOCKED",
-      "assertions": "Local install, typecheck, lint, format, database boundary, OpenSpec, provider-input and billing-contract tests, billing schema probe and production build passed on this digest. Point-in-time public Acceptance web health and the then-active provider worker health were read with createsEnabled false. The 2026-10-29 hosted four-path create/settle/verify on Railway worker shpitto-m4-worker (production) is recorded in hostedFourPathCreate: one paid POST per path, stage verified, task succeeded, reservation consumed, quoted credits 10, private hash PASS, owner HTTP 200, outsider/wrong/expired token 403, authenticated account callback true, and provider cost status UNKNOWN. The fal T2V file stores task success under taskSuatus. After all four paths the worker was returned to STATE=paused and ALLOW_CREATE=false, and healthz confirmed state=paused and createsEnabled=false. Complete stage evidence stays BLOCKED. The recovery drill, negative callback and financial-idempotence cases, deadline and sweep configuration, recovery-monitor ready output, owned-module coverage, current M3 equivalence, and independent review remain open.",
+      "assertions": "Local install, typecheck, lint, format, database boundary, OpenSpec, provider-input and billing-contract tests, billing schema probe and production build passed on this digest. Point-in-time public Acceptance web health and the then-active provider worker health were read with createsEnabled false. The 2026-10-29 hosted four-path create/settle/verify on Railway worker shpitto-m4-worker (production) is recorded in hostedFourPathCreate: one paid POST per path, stage verified, task succeeded, reservation consumed, quoted credits 10, private hash PASS, owner HTTP 200, outsider/wrong/expired token 403, authenticated account callback true, and provider cost status UNKNOWN. The fal T2V file stores task success under taskSuatus. After all four paths the worker was returned to STATE=paused and ALLOW_CREATE=false, and healthz confirmed state=paused and createsEnabled=false. Complete stage evidence stays BLOCKED. The selected self-hosted recovery drill and recovery-monitor ready body are recorded and do not close the stage. Negative callback and financial-idempotence cases, numeric deadline and probe configuration, storage-failure fault suites, owned-module coverage, current M3 equivalence, and independent review remain open.",
       "evidenceRefs": [
         "internal/evidence/acceptance/M4/m4-current-20261029/README.md",
         "internal/evidence/acceptance/M4/m4-current-20261029/digest-delta.json",
         "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261029/replicate-wan22-t2v_6e3d.json",
         "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261029/fal-wan22-t2v_68bb.json",
         "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261029/fal-wan22-i2v_bda3.json",
-        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261029/replicate-wan22-i2v_ee33.json"
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261029/replicate-wan22-i2v_ee33.json",
+        "internal/evidence/M4/task-5.10/railway-worker/recovery-drill-20261029/recovery-execution-20261029.json",
+        "internal/evidence/M4/task-5.10/railway-worker/recovery-drill-20261029/recovery-drill-20261029.md",
+        "internal/evidence/M4/task-5.10/railway-worker/recovery-drill-20261029/inspect.json",
+        "internal/evidence/M4/task-5.10/railway-worker/recovery-drill-20261029/verify.json",
+        "internal/evidence/M4/task-5.10/railway-worker/recovery-drill-20261029/monitor-ready.json",
+        "internal/evidence/acceptance/M4/m4-current-20261029/logs/probe-provider-recovery.log"
       ]
     }
   ],
@@ -411,7 +562,7 @@
       ],
       "mandatory": true,
       "result": "NOT_RUN",
-      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and does not pass this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement, the hosted recovery drill and current M3 equivalence were not re-run and remain outside this result.",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and the selected self-hosted recovery drill is recorded in hostedRecoveryDrill. Neither passes this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
       "evidenceRefs": []
     },
     {
@@ -420,7 +571,7 @@
       ],
       "mandatory": true,
       "result": "NOT_RUN",
-      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and does not pass this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement, the hosted recovery drill and current M3 equivalence were not re-run and remain outside this result.",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and the selected self-hosted recovery drill is recorded in hostedRecoveryDrill. Neither passes this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
       "evidenceRefs": []
     },
     {
@@ -429,7 +580,7 @@
       ],
       "mandatory": true,
       "result": "NOT_RUN",
-      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and does not pass this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement, the hosted recovery drill and current M3 equivalence were not re-run and remain outside this result.",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and the selected self-hosted recovery drill is recorded in hostedRecoveryDrill. Neither passes this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
       "evidenceRefs": []
     },
     {
@@ -438,7 +589,7 @@
       ],
       "mandatory": true,
       "result": "NOT_RUN",
-      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and does not pass this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement, the hosted recovery drill and current M3 equivalence were not re-run and remain outside this result.",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and the selected self-hosted recovery drill is recorded in hostedRecoveryDrill. Neither passes this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
       "evidenceRefs": []
     },
     {
@@ -447,7 +598,7 @@
       ],
       "mandatory": true,
       "result": "NOT_RUN",
-      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and does not pass this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement, the hosted recovery drill and current M3 equivalence were not re-run and remain outside this result.",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and the selected self-hosted recovery drill is recorded in hostedRecoveryDrill. Neither passes this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
       "evidenceRefs": []
     },
     {
@@ -456,7 +607,7 @@
       ],
       "mandatory": true,
       "result": "NOT_RUN",
-      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and does not pass this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement, the hosted recovery drill and current M3 equivalence were not re-run and remain outside this result.",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and the selected self-hosted recovery drill is recorded in hostedRecoveryDrill. Neither passes this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
       "evidenceRefs": []
     },
     {
@@ -465,7 +616,7 @@
       ],
       "mandatory": true,
       "result": "NOT_RUN",
-      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and does not pass this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement, the hosted recovery drill and current M3 equivalence were not re-run and remain outside this result.",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and the selected self-hosted recovery drill is recorded in hostedRecoveryDrill. Neither passes this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
       "evidenceRefs": []
     },
     {
@@ -474,7 +625,7 @@
       ],
       "mandatory": true,
       "result": "NOT_RUN",
-      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and does not pass this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement, the hosted recovery drill and current M3 equivalence were not re-run and remain outside this result.",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and the selected self-hosted recovery drill is recorded in hostedRecoveryDrill. Neither passes this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
       "evidenceRefs": []
     },
     {
@@ -483,7 +634,7 @@
       ],
       "mandatory": true,
       "result": "NOT_RUN",
-      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and does not pass this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement, the hosted recovery drill and current M3 equivalence were not re-run and remain outside this result.",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and the selected self-hosted recovery drill is recorded in hostedRecoveryDrill. Neither passes this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
       "evidenceRefs": []
     },
     {
@@ -492,7 +643,7 @@
       ],
       "mandatory": true,
       "result": "NOT_RUN",
-      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and does not pass this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement, the hosted recovery drill and current M3 equivalence were not re-run and remain outside this result.",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and the selected self-hosted recovery drill is recorded in hostedRecoveryDrill. Neither passes this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
       "evidenceRefs": []
     },
     {
@@ -501,7 +652,7 @@
       ],
       "mandatory": true,
       "result": "NOT_RUN",
-      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and does not pass this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement, the hosted recovery drill and current M3 equivalence were not re-run and remain outside this result.",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and the selected self-hosted recovery drill is recorded in hostedRecoveryDrill. Neither passes this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
       "evidenceRefs": []
     },
     {
@@ -510,7 +661,7 @@
       ],
       "mandatory": true,
       "result": "NOT_RUN",
-      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and does not pass this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement, the hosted recovery drill and current M3 equivalence were not re-run and remain outside this result.",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and the selected self-hosted recovery drill is recorded in hostedRecoveryDrill. Neither passes this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
       "evidenceRefs": []
     },
     {
@@ -519,7 +670,7 @@
       ],
       "mandatory": true,
       "result": "NOT_RUN",
-      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and does not pass this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement, the hosted recovery drill and current M3 equivalence were not re-run and remain outside this result.",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and the selected self-hosted recovery drill is recorded in hostedRecoveryDrill. Neither passes this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
       "evidenceRefs": []
     },
     {
@@ -528,7 +679,7 @@
       ],
       "mandatory": true,
       "result": "NOT_RUN",
-      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and does not pass this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement, the hosted recovery drill and current M3 equivalence were not re-run and remain outside this result.",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and the selected self-hosted recovery drill is recorded in hostedRecoveryDrill. Neither passes this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
       "evidenceRefs": []
     },
     {
@@ -537,7 +688,7 @@
       ],
       "mandatory": true,
       "result": "NOT_RUN",
-      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and does not pass this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement, the hosted recovery drill and current M3 equivalence were not re-run and remain outside this result.",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and the selected self-hosted recovery drill is recorded in hostedRecoveryDrill. Neither passes this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
       "evidenceRefs": []
     },
     {
@@ -546,7 +697,7 @@
       ],
       "mandatory": true,
       "result": "NOT_RUN",
-      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and does not pass this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement, the hosted recovery drill and current M3 equivalence were not re-run and remain outside this result.",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and the selected self-hosted recovery drill is recorded in hostedRecoveryDrill. Neither passes this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
       "evidenceRefs": []
     },
     {
@@ -555,7 +706,7 @@
       ],
       "mandatory": true,
       "result": "NOT_RUN",
-      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and does not pass this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement, the hosted recovery drill and current M3 equivalence were not re-run and remain outside this result.",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and the selected self-hosted recovery drill is recorded in hostedRecoveryDrill. Neither passes this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
       "evidenceRefs": []
     },
     {
@@ -564,7 +715,7 @@
       ],
       "mandatory": true,
       "result": "NOT_RUN",
-      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and does not pass this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement, the hosted recovery drill and current M3 equivalence were not re-run and remain outside this result.",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and the selected self-hosted recovery drill is recorded in hostedRecoveryDrill. Neither passes this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
       "evidenceRefs": []
     },
     {
@@ -573,7 +724,7 @@
       ],
       "mandatory": true,
       "result": "NOT_RUN",
-      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and does not pass this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement, the hosted recovery drill and current M3 equivalence were not re-run and remain outside this result.",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and the selected self-hosted recovery drill is recorded in hostedRecoveryDrill. Neither passes this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
       "evidenceRefs": []
     },
     {
@@ -582,7 +733,7 @@
       ],
       "mandatory": true,
       "result": "NOT_RUN",
-      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and does not pass this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement, the hosted recovery drill and current M3 equivalence were not re-run and remain outside this result.",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and the selected self-hosted recovery drill is recorded in hostedRecoveryDrill. Neither passes this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
       "evidenceRefs": []
     },
     {
@@ -591,7 +742,7 @@
       ],
       "mandatory": true,
       "result": "NOT_RUN",
-      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and does not pass this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement, the hosted recovery drill and current M3 equivalence were not re-run and remain outside this result.",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and the selected self-hosted recovery drill is recorded in hostedRecoveryDrill. Neither passes this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
       "evidenceRefs": []
     },
     {
@@ -600,7 +751,7 @@
       ],
       "mandatory": true,
       "result": "NOT_RUN",
-      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and does not pass this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement, the hosted recovery drill and current M3 equivalence were not re-run and remain outside this result.",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and the selected self-hosted recovery drill is recorded in hostedRecoveryDrill. Neither passes this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
       "evidenceRefs": []
     },
     {
@@ -609,7 +760,7 @@
       ],
       "mandatory": true,
       "result": "NOT_RUN",
-      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and does not pass this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement, the hosted recovery drill and current M3 equivalence were not re-run and remain outside this result.",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and the selected self-hosted recovery drill is recorded in hostedRecoveryDrill. Neither passes this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
       "evidenceRefs": []
     },
     {
@@ -618,7 +769,7 @@
       ],
       "mandatory": true,
       "result": "NOT_RUN",
-      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and does not pass this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement, the hosted recovery drill and current M3 equivalence were not re-run and remain outside this result.",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and the selected self-hosted recovery drill is recorded in hostedRecoveryDrill. Neither passes this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
       "evidenceRefs": []
     },
     {
@@ -627,7 +778,7 @@
       ],
       "mandatory": true,
       "result": "NOT_RUN",
-      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and does not pass this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement, the hosted recovery drill and current M3 equivalence were not re-run and remain outside this result.",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and the selected self-hosted recovery drill is recorded in hostedRecoveryDrill. Neither passes this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
       "evidenceRefs": []
     },
     {
@@ -636,7 +787,7 @@
       ],
       "mandatory": true,
       "result": "NOT_RUN",
-      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and does not pass this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement, the hosted recovery drill and current M3 equivalence were not re-run and remain outside this result.",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and the selected self-hosted recovery drill is recorded in hostedRecoveryDrill. Neither passes this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
       "evidenceRefs": []
     },
     {
@@ -645,7 +796,7 @@
       ],
       "mandatory": true,
       "result": "NOT_RUN",
-      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and does not pass this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement, the hosted recovery drill and current M3 equivalence were not re-run and remain outside this result.",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and the selected self-hosted recovery drill is recorded in hostedRecoveryDrill. Neither passes this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
       "evidenceRefs": []
     },
     {
@@ -654,7 +805,7 @@
       ],
       "mandatory": true,
       "result": "NOT_RUN",
-      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and does not pass this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement, the hosted recovery drill and current M3 equivalence were not re-run and remain outside this result.",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and the selected self-hosted recovery drill is recorded in hostedRecoveryDrill. Neither passes this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
       "evidenceRefs": []
     },
     {
@@ -663,7 +814,7 @@
       ],
       "mandatory": true,
       "result": "NOT_RUN",
-      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and does not pass this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement, the hosted recovery drill and current M3 equivalence were not re-run and remain outside this result.",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and the selected self-hosted recovery drill is recorded in hostedRecoveryDrill. Neither passes this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
       "evidenceRefs": []
     },
     {
@@ -672,7 +823,7 @@
       ],
       "mandatory": true,
       "result": "NOT_RUN",
-      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and does not pass this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement, the hosted recovery drill and current M3 equivalence were not re-run and remain outside this result.",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and the selected self-hosted recovery drill is recorded in hostedRecoveryDrill. Neither passes this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
       "evidenceRefs": []
     },
     {
@@ -681,7 +832,7 @@
       ],
       "mandatory": true,
       "result": "NOT_RUN",
-      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and does not pass this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement, the hosted recovery drill and current M3 equivalence were not re-run and remain outside this result.",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and the selected self-hosted recovery drill is recorded in hostedRecoveryDrill. Neither passes this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
       "evidenceRefs": []
     },
     {
@@ -690,7 +841,7 @@
       ],
       "mandatory": true,
       "result": "NOT_RUN",
-      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and does not pass this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement, the hosted recovery drill and current M3 equivalence were not re-run and remain outside this result.",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and the selected self-hosted recovery drill is recorded in hostedRecoveryDrill. Neither passes this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
       "evidenceRefs": []
     },
     {
@@ -699,7 +850,7 @@
       ],
       "mandatory": true,
       "result": "NOT_RUN",
-      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and does not pass this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement, the hosted recovery drill and current M3 equivalence were not re-run and remain outside this result.",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and the selected self-hosted recovery drill is recorded in hostedRecoveryDrill. Neither passes this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
       "evidenceRefs": []
     },
     {
@@ -708,7 +859,7 @@
       ],
       "mandatory": true,
       "result": "NOT_RUN",
-      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and does not pass this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement, the hosted recovery drill and current M3 equivalence were not re-run and remain outside this result.",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and the selected self-hosted recovery drill is recorded in hostedRecoveryDrill. Neither passes this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
       "evidenceRefs": []
     },
     {
@@ -717,7 +868,7 @@
       ],
       "mandatory": true,
       "result": "NOT_RUN",
-      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and does not pass this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement, the hosted recovery drill and current M3 equivalence were not re-run and remain outside this result.",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and the selected self-hosted recovery drill is recorded in hostedRecoveryDrill. Neither passes this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
       "evidenceRefs": []
     },
     {
@@ -726,7 +877,7 @@
       ],
       "mandatory": true,
       "result": "NOT_RUN",
-      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and does not pass this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement, the hosted recovery drill and current M3 equivalence were not re-run and remain outside this result.",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and the selected self-hosted recovery drill is recorded in hostedRecoveryDrill. Neither passes this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
       "evidenceRefs": []
     },
     {
@@ -735,7 +886,7 @@
       ],
       "mandatory": true,
       "result": "NOT_RUN",
-      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and does not pass this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement, the hosted recovery drill and current M3 equivalence were not re-run and remain outside this result.",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and the selected self-hosted recovery drill is recorded in hostedRecoveryDrill. Neither passes this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
       "evidenceRefs": []
     },
     {
@@ -744,7 +895,7 @@
       ],
       "mandatory": true,
       "result": "NOT_RUN",
-      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and does not pass this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement, the hosted recovery drill and current M3 equivalence were not re-run and remain outside this result.",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and the selected self-hosted recovery drill is recorded in hostedRecoveryDrill. Neither passes this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
       "evidenceRefs": []
     },
     {
@@ -753,7 +904,7 @@
       ],
       "mandatory": true,
       "result": "NOT_RUN",
-      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and does not pass this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement, the hosted recovery drill and current M3 equivalence were not re-run and remain outside this result.",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and the selected self-hosted recovery drill is recorded in hostedRecoveryDrill. Neither passes this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
       "evidenceRefs": []
     },
     {
@@ -762,7 +913,7 @@
       ],
       "mandatory": true,
       "result": "NOT_RUN",
-      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and does not pass this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement, the hosted recovery drill and current M3 equivalence were not re-run and remain outside this result.",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and the selected self-hosted recovery drill is recorded in hostedRecoveryDrill. Neither passes this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
       "evidenceRefs": []
     },
     {
@@ -771,7 +922,7 @@
       ],
       "mandatory": true,
       "result": "NOT_RUN",
-      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and does not pass this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement, the hosted recovery drill and current M3 equivalence were not re-run and remain outside this result.",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and the selected self-hosted recovery drill is recorded in hostedRecoveryDrill. Neither passes this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
       "evidenceRefs": []
     },
     {
@@ -780,7 +931,7 @@
       ],
       "mandatory": true,
       "result": "NOT_RUN",
-      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and does not pass this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement, the hosted recovery drill and current M3 equivalence were not re-run and remain outside this result.",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and the selected self-hosted recovery drill is recorded in hostedRecoveryDrill. Neither passes this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
       "evidenceRefs": []
     },
     {
@@ -789,7 +940,7 @@
       ],
       "mandatory": true,
       "result": "NOT_RUN",
-      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and does not pass this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement, the hosted recovery drill and current M3 equivalence were not re-run and remain outside this result.",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and the selected self-hosted recovery drill is recorded in hostedRecoveryDrill. Neither passes this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
       "evidenceRefs": []
     },
     {
@@ -798,7 +949,7 @@
       ],
       "mandatory": true,
       "result": "NOT_RUN",
-      "scope": "Full M4 profile remains unapproved; current local contract/live-storage proof is separately scoped. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and does not pass this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement, the hosted recovery drill and current M3 equivalence were not re-run and remain outside this result.",
+      "scope": "Full M4 profile remains unapproved; current local contract/live-storage proof is separately scoped. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and the selected self-hosted recovery drill is recorded in hostedRecoveryDrill. Neither passes this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
       "evidenceRefs": [
         "internal/evidence/M4/task-5.10/railway-worker/remaining-validation-20261015.json",
         "internal/evidence/M4/task-5.10/railway-worker/verify-related-contracts-20261015.log",
@@ -811,7 +962,7 @@
       ],
       "mandatory": true,
       "result": "NOT_RUN",
-      "scope": "Full M4 profile remains unapproved; current local contract/live-storage proof is separately scoped. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and does not pass this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement, the hosted recovery drill and current M3 equivalence were not re-run and remain outside this result.",
+      "scope": "Full M4 profile remains unapproved; current local contract/live-storage proof is separately scoped. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and the selected self-hosted recovery drill is recorded in hostedRecoveryDrill. Neither passes this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
       "evidenceRefs": [
         "internal/evidence/M4/task-5.10/railway-worker/remaining-validation-20261015.json",
         "internal/evidence/M4/task-5.10/railway-worker/verify-related-contracts-20261015.log",
@@ -824,7 +975,7 @@
       ],
       "mandatory": true,
       "result": "NOT_RUN",
-      "scope": "Full M4 profile remains unapproved; current local contract/live-storage proof is separately scoped. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and does not pass this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement, the hosted recovery drill and current M3 equivalence were not re-run and remain outside this result.",
+      "scope": "Full M4 profile remains unapproved; current local contract/live-storage proof is separately scoped. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and the selected self-hosted recovery drill is recorded in hostedRecoveryDrill. Neither passes this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
       "evidenceRefs": [
         "internal/evidence/M4/task-5.10/railway-worker/remaining-validation-20261015.json",
         "internal/evidence/M4/task-5.10/railway-worker/verify-related-contracts-20261015.log",
@@ -836,7 +987,7 @@
     {
       "taskId": "5.1",
       "result": "PASS",
-      "scope": "Four inspected provider schema contracts, versioned catalog identity and immutable snapshot helpers; no live dispatch claim. Current common and affected domain regression evidence is refreshed; original task-specific evidence remains historical. Current common and affected domain regression evidence is refreshed; original task-specific evidence remains historical. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and does not pass this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement, the hosted recovery drill and current M3 equivalence were not re-run and remain outside this result.",
+      "scope": "Four inspected provider schema contracts, versioned catalog identity and immutable snapshot helpers; no live dispatch claim. Current common and affected domain regression evidence is refreshed; original task-specific evidence remains historical. Current common and affected domain regression evidence is refreshed; original task-specific evidence remains historical. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and the selected self-hosted recovery drill is recorded in hostedRecoveryDrill. Neither passes this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
       "evidenceRefs": [
         "internal/evidence/M6/local-20261004/final/result.json",
         "internal/evidence/M6/local-20261004/final/commands.json",
@@ -853,7 +1004,7 @@
     {
       "taskId": "5.2",
       "result": "PASS",
-      "scope": "Pinned local Replicate T2V/I2V adapter contracts, safe input mapping, exact persisted request identity validation and fail-closed unknown responses; no live provider claim. Current common and affected domain regression evidence is refreshed; original task-specific evidence remains historical. Current common and affected domain regression evidence is refreshed; original task-specific evidence remains historical. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and does not pass this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement, the hosted recovery drill and current M3 equivalence were not re-run and remain outside this result.",
+      "scope": "Pinned local Replicate T2V/I2V adapter contracts, safe input mapping, exact persisted request identity validation and fail-closed unknown responses; no live provider claim. Current common and affected domain regression evidence is refreshed; original task-specific evidence remains historical. Current common and affected domain regression evidence is refreshed; original task-specific evidence remains historical. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and the selected self-hosted recovery drill is recorded in hostedRecoveryDrill. Neither passes this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
       "evidenceRefs": [
         "internal/evidence/M6/local-20261004/final/result.json",
         "internal/evidence/M6/local-20261004/final/commands.json",
@@ -870,7 +1021,7 @@
     {
       "taskId": "5.3",
       "result": "PASS",
-      "scope": "Local fal queue T2V/I2V adapter contracts with no-retry header, exact request IDs, tracking-origin checks and disabled live rows; no live provider claim. Current common and affected domain regression evidence is refreshed; original task-specific evidence remains historical. Current common and affected domain regression evidence is refreshed; original task-specific evidence remains historical. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and does not pass this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement, the hosted recovery drill and current M3 equivalence were not re-run and remain outside this result.",
+      "scope": "Local fal queue T2V/I2V adapter contracts with no-retry header, exact request IDs, tracking-origin checks and disabled live rows; no live provider claim. Current common and affected domain regression evidence is refreshed; original task-specific evidence remains historical. Current common and affected domain regression evidence is refreshed; original task-specific evidence remains historical. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The 2026-10-29 hosted four-path create/settle/verify is recorded in hostedFourPathCreate and the selected self-hosted recovery drill is recorded in hostedRecoveryDrill. Neither passes this result. Live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
       "evidenceRefs": [
         "internal/evidence/M6/local-20261004/final/result.json",
         "internal/evidence/M6/local-20261004/final/commands.json",
@@ -978,23 +1129,23 @@
       "commandId": "contracts-billing-contracts",
       "invocation": "node --experimental-strip-types --test tests/contracts/billing-contracts.test.ts",
       "environmentId": "m4-current-local-20261029",
-      "startAt": "2026-10-29T04:00:42.286Z",
-      "endAt": "2026-10-29T04:00:42.403Z",
+      "startAt": "2026-10-29T05:39:10.455Z",
+      "endAt": "2026-10-29T05:39:10.585Z",
       "exitCode": 0,
       "signal": null,
       "status": "PASS",
-      "outputRef": "internal/evidence/acceptance/M4/m4-current-20261029/logs/contracts-billing-contracts.log"
+      "outputRef": "internal/evidence/acceptance/local-rerun-20261029/contracts-billing-contracts.log"
     },
     {
       "commandId": "billing-schema",
       "invocation": "node --env-file=.env.local --experimental-strip-types scripts/probe-billing-schema.ts",
       "environmentId": "m4-current-local-20261029",
-      "startAt": "2026-10-29T04:00:42.404Z",
-      "endAt": "2026-10-29T04:00:43.275Z",
+      "startAt": "2026-10-29T05:39:06.997Z",
+      "endAt": "2026-10-29T05:39:08.461Z",
       "exitCode": 0,
       "signal": null,
       "status": "PASS",
-      "outputRef": "internal/evidence/acceptance/M4/m4-current-20261029/logs/billing-schema.log"
+      "outputRef": "internal/evidence/acceptance/local-rerun-20261029/billing-schema.log"
     },
     {
       "commandId": "hosted-web-health",
@@ -1017,6 +1168,17 @@
       "signal": null,
       "status": "PASS",
       "outputRef": "internal/evidence/acceptance/M4/m4-current-20261029/logs/hosted-worker-health.log"
+    },
+    {
+      "commandId": "probe-provider-recovery",
+      "invocation": "node --experimental-strip-types scripts/probe-provider-recovery.ts",
+      "environmentId": "m4-current-local-20261029",
+      "startAt": "2026-10-29T05:39:06.857Z",
+      "endAt": "2026-10-29T05:39:06.996Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M4/m4-current-20261029/logs/probe-provider-recovery.log"
     }
   ],
   "coverage": {
@@ -1030,11 +1192,11 @@
   "defects": [],
   "externalInputs": {
     "availability": "PARTIAL_REAL_PROVIDER_EVIDENCE",
-    "requiredInput": "Hosted recovery or restart drill; forged, stale, and wrong-account callback failures; duplicate and reordered financial idempotence; deadline, probe, and alert configuration; storage-failure fault suites; recovery-monitor ready output; independent full-stage review. Provider dollar cost remains UNKNOWN.",
+    "requiredInput": "Forged, stale, and wrong-account callback failures; duplicate and reordered financial idempotence; numeric deadline, probe, and alert configuration; storage-failure fault suites; independent full-stage review. The 2026-10-29 selected self-hosted recovery drill and recovery-monitor ready body are already recorded. Provider dollar cost remains UNKNOWN.",
     "affectedTasks": [
       "5.10"
     ],
-    "nextAction": "Retain the 2026-10-29 four-path success rows. Prove the hosted recovery drill, negative callback and financial-idempotence cases, deadline and sweep configuration, and independent review. Provider dollar cost remains UNKNOWN. No further paid create is authorized by this record."
+    "nextAction": "Retain the 2026-10-29 four-path rows and the selected self-hosted recovery drill. Prove negative callback and financial-idempotence cases, numeric deadline and probe configuration, storage-failure fault suites, and independent review. Provider dollar cost remains UNKNOWN. No further paid create is authorized by this record."
   },
   "submission": {
     "implementerId": "codex-current-candidate-refresh",
@@ -1072,7 +1234,7 @@
     "currentM3Applicability": "STALE",
     "requiredReruns": [
       "Independent review of current M3 applicability before any equivalence carry.",
-      "Hosted recovery or restart drill, negative callback and financial-idempotence cases, and deadline and sweep configuration. The 2026-10-29 four success rows are already recorded.",
+      "Negative callback and financial-idempotence cases, numeric deadline and probe configuration, and storage-failure fault suites. The 2026-10-29 four success rows and selected self-hosted recovery drill are already recorded.",
       "Hosted Stripe acceptance-profile lifecycle, refund readback and owner-command replay.",
       "Repair or explicitly reclassify the local Stripe refund step-up failure before claiming that suite.",
       "Real FirstPromoter account and hosted settlement evidence.",
@@ -1081,12 +1243,12 @@
     "carriedEvidence": []
   },
   "limitations": [
-    "This record rebinds development evidence to the current digests and records the hosted four-path create. It does not promote the stage to PASS or READY_FOR_REVIEW.",
+    "This record rebinds development evidence to the current digests and records the hosted four-path create and the selected self-hosted recovery drill. It does not promote the stage to PASS or READY_FOR_REVIEW.",
     "Current M3 applicability is STALE. The historical M3 PASS record was not modified.",
-    "The digest-refresh health read at 2026-10-29T04:04:19Z saw worker health ready with creates disabled, and a later deployment of the same commit was BUILDING. That read predates the four-path run. Recovery-monitor ready output was not re-read.",
+    "The digest-refresh health read at 2026-10-29T04:04:19Z saw worker health ready with creates disabled, and a later deployment of the same commit was BUILDING. That read predates the four-path run and the recovery drill. The recovery-monitor ready body was re-read after the drill.",
     "The controlled four-path run used one paid POST per path. Provider cost status is UNKNOWN and actual provider cost is not confirmed. No live Stripe charge, refund, payout, or FirstPromoter write was performed.",
     "Stripe acceptance-profile and FirstPromoter account rows were not re-run.",
-    "The hosted recovery drill, forged or stale or wrong-account callback failures, duplicate or reordered financial idempotence, and deadline or sweep configuration were not re-verified."
+    "Forged or stale or wrong-account callback failures, duplicate or reordered financial idempotence, and numeric deadline or probe configuration were not re-verified. Web was missing the SHPITTO_RECOVERY_* observe recipient env at drill start; secret, URL, workspace, key, mode=observe, and projectId were set on shpitto-m4-web mid-drill before delivery succeeded."
   ],
   "candidateRefresh": {
     "capturedAt": "2026-10-29T04:03:24.442Z",
@@ -1109,12 +1271,11 @@
       "contracts-billing-contracts",
       "billing-schema",
       "hosted-web-health",
-      "hosted-worker-health"
+      "hosted-worker-health",
+      "probe-provider-recovery"
     ],
     "failedNotClaimed": [],
     "notRerun": [
-      "hosted-recovery-drill",
-      "recovery-monitor-ready",
       "forged-stale-wrong-account-callbacks",
       "duplicate-reorder-financial-idempotence",
       "deadline-sweep-config",
