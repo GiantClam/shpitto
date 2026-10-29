@@ -222,8 +222,8 @@
     },
     {
       "path": "deploy/provider-worker.Dockerfile",
-      "bytes": 1072,
-      "sha256": "607583db657fd447cd4debe4dfbf3ae5a92c93228eff6eaf416db61c197b1b22"
+      "bytes": 1228,
+      "sha256": "87fbe59d6ed36d66d67485a5719f913295a4b0566d284485cc8e9cfc6b1e4aec"
     },
     {
       "path": "deploy/railway.provider-worker.json",
@@ -282,8 +282,8 @@
     },
     {
       "path": "package.json",
-      "bytes": 8664,
-      "sha256": "4509c02af6c2416752763f1e8f90a227f2658f1963082caaf6569d270df4d752"
+      "bytes": 8719,
+      "sha256": "2ae0910e6954aa74a730f219c5368b85b00d1a292547506478cd73a3c8299575"
     },
     {
       "path": "pnpm-workspace.yaml",
@@ -737,8 +737,8 @@
     },
     {
       "path": "scripts/probe-provider-acceptance.ts",
-      "bytes": 29718,
-      "sha256": "04a19718e8f4cbb111c9acce51141c173cf7d8ef1920e278ca3fefa8c6679008"
+      "bytes": 29736,
+      "sha256": "1c03db872f370e99866a18e311d8ee8df0a87f9664ff4d26de267d06de31ab17"
     },
     {
       "path": "scripts/probe-provider-recovery.ts",
@@ -784,6 +784,11 @@
       "path": "scripts/probe-workspaces.ts",
       "bytes": 14846,
       "sha256": "d3b6d7640b41b3991a9838e98655e4256c8fa3964e89a9dbc5010a8aa9c3a3fc"
+    },
+    {
+      "path": "scripts/probe-write-b64-file.ts",
+      "bytes": 547,
+      "sha256": "e70fdefe42cb07c3da60478e236c4e17a7bba22cad1f1cbeb9c5ffe7b427c9c7"
     },
     {
       "path": "scripts/provider-worker-preflight.ts",
@@ -3321,8 +3326,8 @@
     },
     {
       "path": "deploy/provider-worker.Dockerfile",
-      "bytes": 1072,
-      "sha256": "607583db657fd447cd4debe4dfbf3ae5a92c93228eff6eaf416db61c197b1b22"
+      "bytes": 1228,
+      "sha256": "87fbe59d6ed36d66d67485a5719f913295a4b0566d284485cc8e9cfc6b1e4aec"
     },
     {
       "path": "deploy/railway.provider-worker.json",
@@ -3341,8 +3346,8 @@
     },
     {
       "path": "package.json",
-      "bytes": 8664,
-      "sha256": "4509c02af6c2416752763f1e8f90a227f2658f1963082caaf6569d270df4d752"
+      "bytes": 8719,
+      "sha256": "2ae0910e6954aa74a730f219c5368b85b00d1a292547506478cd73a3c8299575"
     },
     {
       "path": "pnpm-workspace.yaml",
@@ -4050,8 +4055,8 @@
     },
     {
       "path": "scripts/probe-provider-acceptance.ts",
-      "bytes": 29718,
-      "sha256": "04a19718e8f4cbb111c9acce51141c173cf7d8ef1920e278ca3fefa8c6679008"
+      "bytes": 29736,
+      "sha256": "1c03db872f370e99866a18e311d8ee8df0a87f9664ff4d26de267d06de31ab17"
     },
     {
       "path": "scripts/probe-provider-recovery.ts",
@@ -4097,6 +4102,11 @@
       "path": "scripts/probe-workspaces.ts",
       "bytes": 14846,
       "sha256": "d3b6d7640b41b3991a9838e98655e4256c8fa3964e89a9dbc5010a8aa9c3a3fc"
+    },
+    {
+      "path": "scripts/probe-write-b64-file.ts",
+      "bytes": 547,
+      "sha256": "e70fdefe42cb07c3da60478e236c4e17a7bba22cad1f1cbeb9c5ffe7b427c9c7"
     },
     {
       "path": "scripts/provider-worker-preflight.ts",

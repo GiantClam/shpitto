@@ -8,7 +8,7 @@ import {pathToFileURL} from 'node:url';
 import type {ReadyInputSnapshot} from '../src/modules/generation/create.ts';
 import type {SubmissionContext} from '../src/adapters/providers/port.ts';
 
-const ROWS = ['fal-wan22-i2v', 'replicate-wan22-t2v', 'replicate-wan22-i2v'] as const;
+const ROWS = ['fal-wan22-t2v', 'fal-wan22-i2v', 'replicate-wan22-t2v', 'replicate-wan22-i2v'] as const;
 const UUID = /^[a-f0-9]{8}-[a-f0-9]{4}-[1-5][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i;
 const ID = /^[A-Za-z0-9_-]{1,200}$/;
 const hash = (bytes: Uint8Array | string) => createHash('sha256').update(bytes).digest('hex');
@@ -317,3 +317,4 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
   main().catch(() => {console.error('Provider acceptance probe failed. No secrets or signed URLs are printed. Inspect this run; never retry a started submission.'); process.exitCode = 1;});
 }
+

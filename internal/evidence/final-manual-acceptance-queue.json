@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.0",
   "queueKind": "FINAL_MANUAL_ACCEPTANCE_QUEUE",
-  "generatedAt": "2026-10-29T11:04:27.934Z",
+  "generatedAt": "2026-10-29T15:12:54.414Z",
   "checkpointId": "M8-STABLE",
   "policy": "Automated evidence produces a complete explanation package and may advance as READY_FOR_REVIEW. Human reviewers choose PASS, FAIL or RETURN_FOR_EVIDENCE from that package; they do not rerun tests as a substitute for reviewing evidence. Independent review and integration decisions are accumulated here and are the only manual stage-acceptance actions required before final PASS.",
   "entries": [
@@ -7493,14 +7493,14 @@
           }
         ],
         "candidate": {
-          "capturedAt": "2026-10-29T10:58:42.785Z",
-          "sourceCommit": "0927667df20a799de4b2fefaadbf7a833f49cbce",
+          "capturedAt": "2026-10-29T15:03:09.780Z",
+          "sourceCommit": "9c90026af539680c703bc5c91fb69258bb3042b7",
           "dirtyPatchSha256": null,
-          "sourceTreeSha256": "88e5bc247840b12a230472be3e8b8d4acb2ffbd5cfb5e844d5f5430139588b06",
+          "sourceTreeSha256": "0b0f0b6ae0c0e0ed45baaa7f3ecdedc325923edaa31c6c340817b789bfa6f045",
           "schemaSha256": "db21b40ab33bcbac245b616474d5603aa5ee074ba82a0e41b80c93861f2d43c4",
-          "configurationSha256": "48f5cd656ad8d6d695353d5ebe2aa7f8eaccaefe92a0c258dcdffed845b5d806",
+          "configurationSha256": "00880866584cbf06cfacfe0f774f35c7a36d3b8339fc3e3146e34dd007638c58",
           "contractSha256": "64a37e1dc089372f0177d144ea8f2f2489c4a0ba3e75abe5bd6adc215f14514b",
-          "validatorSha256": "c52b8a3405cc88f90965e254c2f150186e33c73bf54822286c6fd93c07c88462",
+          "validatorSha256": "af945003119ea9722efe3093818cbe31bdc3c6a4a2f47cebc8783595fbc164b9",
           "lockfileSha256": "a75db59723c866636d370d21e20eec1b86d5281810749331504ae42d3f043bee",
           "digestAlgorithm": "SHA-256 of sorted relative-path\\0byte-size\\0file-digest entries joined with LF; lockfile is raw byte SHA-256",
           "digestInputs": {
@@ -8656,16 +8656,6 @@
             "startedAt": null,
             "finishedAt": null,
             "outputRef": "internal/evidence/acceptance/M4/m4-current-20261029/logs/probe-provider-recovery.log"
-          },
-          {
-            "commandId": "root-dependency-integrity",
-            "invocation": "corepack pnpm exec node scripts/check-root-integrity.mjs; node --experimental-strip-types --test tests/unit/root-integrity.test.ts tests/unit/candidate-digests.test.ts",
-            "environmentId": "root-dependency-baseline-20261029",
-            "status": "PASS",
-            "exitCode": 0,
-            "startedAt": null,
-            "finishedAt": null,
-            "outputRef": "internal/evidence/acceptance/root-dependency-baseline-20261029.log"
           }
         ],
         "coverage": {
@@ -11828,14 +11818,14 @@
           }
         ],
         "candidate": {
-          "capturedAt": "2026-10-29T10:58:42.785Z",
-          "sourceCommit": "0927667df20a799de4b2fefaadbf7a833f49cbce",
+          "capturedAt": "2026-10-29T15:03:09.780Z",
+          "sourceCommit": null,
           "dirtyPatchSha256": null,
-          "sourceTreeSha256": "88e5bc247840b12a230472be3e8b8d4acb2ffbd5cfb5e844d5f5430139588b06",
+          "sourceTreeSha256": "0b0f0b6ae0c0e0ed45baaa7f3ecdedc325923edaa31c6c340817b789bfa6f045",
           "schemaSha256": "db21b40ab33bcbac245b616474d5603aa5ee074ba82a0e41b80c93861f2d43c4",
-          "configurationSha256": "48f5cd656ad8d6d695353d5ebe2aa7f8eaccaefe92a0c258dcdffed845b5d806",
+          "configurationSha256": "00880866584cbf06cfacfe0f774f35c7a36d3b8339fc3e3146e34dd007638c58",
           "contractSha256": "64a37e1dc089372f0177d144ea8f2f2489c4a0ba3e75abe5bd6adc215f14514b",
-          "validatorSha256": "c52b8a3405cc88f90965e254c2f150186e33c73bf54822286c6fd93c07c88462",
+          "validatorSha256": "af945003119ea9722efe3093818cbe31bdc3c6a4a2f47cebc8783595fbc164b9",
           "lockfileSha256": "a75db59723c866636d370d21e20eec1b86d5281810749331504ae42d3f043bee",
           "digestAlgorithm": "SHA-256 of sorted relative-path\\0byte-size\\0file-digest entries joined with LF; lockfile is raw byte SHA-256",
           "digestInputs": {
@@ -15646,14 +15636,14 @@
           }
         ],
         "candidate": {
-          "capturedAt": "2026-10-29T10:58:42.785Z",
-          "sourceCommit": "0927667df20a799de4b2fefaadbf7a833f49cbce",
+          "capturedAt": "2026-10-29T15:03:09.780Z",
+          "sourceCommit": "9c90026af539680c703bc5c91fb69258bb3042b7",
           "dirtyPatchSha256": null,
-          "sourceTreeSha256": "88e5bc247840b12a230472be3e8b8d4acb2ffbd5cfb5e844d5f5430139588b06",
+          "sourceTreeSha256": "0b0f0b6ae0c0e0ed45baaa7f3ecdedc325923edaa31c6c340817b789bfa6f045",
           "schemaSha256": "db21b40ab33bcbac245b616474d5603aa5ee074ba82a0e41b80c93861f2d43c4",
-          "configurationSha256": "48f5cd656ad8d6d695353d5ebe2aa7f8eaccaefe92a0c258dcdffed845b5d806",
+          "configurationSha256": "00880866584cbf06cfacfe0f774f35c7a36d3b8339fc3e3146e34dd007638c58",
           "contractSha256": "64a37e1dc089372f0177d144ea8f2f2489c4a0ba3e75abe5bd6adc215f14514b",
-          "validatorSha256": "c52b8a3405cc88f90965e254c2f150186e33c73bf54822286c6fd93c07c88462",
+          "validatorSha256": "af945003119ea9722efe3093818cbe31bdc3c6a4a2f47cebc8783595fbc164b9",
           "lockfileSha256": "a75db59723c866636d370d21e20eec1b86d5281810749331504ae42d3f043bee",
           "digestAlgorithm": "SHA-256 of sorted relative-path\\0byte-size\\0file-digest entries joined with LF; lockfile is raw byte SHA-256",
           "digestInputs": {
@@ -16906,16 +16896,6 @@
             "startedAt": null,
             "finishedAt": null,
             "outputRef": "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-referral.log"
-          },
-          {
-            "commandId": "root-dependency-integrity",
-            "invocation": "corepack pnpm exec node scripts/check-root-integrity.mjs; node --experimental-strip-types --test tests/unit/root-integrity.test.ts tests/unit/candidate-digests.test.ts",
-            "environmentId": "root-dependency-baseline-20261029",
-            "status": "PASS",
-            "exitCode": 0,
-            "startedAt": null,
-            "finishedAt": null,
-            "outputRef": "internal/evidence/acceptance/root-dependency-baseline-20261029.log"
           }
         ],
         "coverage": {

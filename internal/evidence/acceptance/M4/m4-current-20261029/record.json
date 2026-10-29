@@ -8,7 +8,7 @@
   "status": "IN_PROGRESS",
   "candidateId": "m4-current-20261029",
   "createdAt": "2026-10-29T04:05:00.000Z",
-  "updatedAt": "2026-10-29T10:58:42.785Z",
+  "updatedAt": "2026-10-29T15:03:09.780Z",
   "policy": {
     "path": "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md",
     "sha256": "3e31e7cb16379171305c558b80dddb930b26fbfa46147cc0d5c6aa319ef64a40"
@@ -26,14 +26,14 @@
     }
   ],
   "candidate": {
-    "capturedAt": "2026-10-29T10:58:42.785Z",
-    "sourceCommit": "0927667df20a799de4b2fefaadbf7a833f49cbce",
+    "capturedAt": "2026-10-29T15:03:09.780Z",
+    "sourceCommit": "9c90026af539680c703bc5c91fb69258bb3042b7",
     "dirtyPatchSha256": null,
-    "sourceTreeSha256": "88e5bc247840b12a230472be3e8b8d4acb2ffbd5cfb5e844d5f5430139588b06",
+    "sourceTreeSha256": "0b0f0b6ae0c0e0ed45baaa7f3ecdedc325923edaa31c6c340817b789bfa6f045",
     "schemaSha256": "db21b40ab33bcbac245b616474d5603aa5ee074ba82a0e41b80c93861f2d43c4",
-    "configurationSha256": "48f5cd656ad8d6d695353d5ebe2aa7f8eaccaefe92a0c258dcdffed845b5d806",
+    "configurationSha256": "00880866584cbf06cfacfe0f774f35c7a36d3b8339fc3e3146e34dd007638c58",
     "contractSha256": "64a37e1dc089372f0177d144ea8f2f2489c4a0ba3e75abe5bd6adc215f14514b",
-    "validatorSha256": "c52b8a3405cc88f90965e254c2f150186e33c73bf54822286c6fd93c07c88462",
+    "validatorSha256": "af945003119ea9722efe3093818cbe31bdc3c6a4a2f47cebc8783595fbc164b9",
     "lockfileSha256": "a75db59723c866636d370d21e20eec1b86d5281810749331504ae42d3f043bee",
     "digestAlgorithm": "SHA-256 of sorted relative-path\\0byte-size\\0file-digest entries joined with LF; lockfile is raw byte SHA-256",
     "digestInputs": {
@@ -1220,17 +1220,6 @@
       "signal": null,
       "status": "PASS",
       "outputRef": "internal/evidence/acceptance/M4/m4-current-20261029/logs/probe-provider-recovery.log"
-    },
-    {
-      "commandId": "root-dependency-integrity",
-      "invocation": "corepack pnpm exec node scripts/check-root-integrity.mjs; node --experimental-strip-types --test tests/unit/root-integrity.test.ts tests/unit/candidate-digests.test.ts",
-      "environmentId": "root-dependency-baseline-20261029",
-      "startAt": "2026-10-29T10:56:49.183Z",
-      "endAt": "2026-10-29T10:56:53.929Z",
-      "exitCode": 0,
-      "signal": null,
-      "status": "PASS",
-      "outputRef": "internal/evidence/acceptance/root-dependency-baseline-20261029.log"
     }
   ],
   "coverage": {
@@ -1288,8 +1277,9 @@
       "Independent review of current M3 applicability before any equivalence carry.",
       "Negative callback and financial-idempotence cases, numeric deadline and probe configuration, and storage-failure fault suites. The 2026-10-29 four success rows and selected self-hosted recovery drill are already recorded.",
       "Hosted Stripe acceptance-profile lifecycle, refund readback and owner-command replay.",
-      "Local defect M5-LOCAL-REFUND-STEPUP-20261029 is CLOSED on the M5 record. That closure does not close M4.",
+      "Repair or explicitly reclassify the local Stripe refund step-up failure before claiming that suite.",
       "Real FirstPromoter account and hosted settlement evidence.",
+      "Recompute owned-module branch coverage on this digest before a coverage PASS claim.",
       "Recompute owned-module branch coverage on this digest before a coverage PASS claim."
     ],
     "carriedEvidence": []
@@ -1303,16 +1293,15 @@
     "Forged or stale or wrong-account callback failures, duplicate or reordered financial idempotence, and numeric deadline or probe configuration were not re-verified. Web was missing the SHPITTO_RECOVERY_* observe recipient env at drill start; secret, URL, workspace, key, mode=observe, and projectId were set on shpitto-m4-web mid-drill before delivery succeeded.",
     "An aipc fixture archive at internal/evidence/acceptance/aipc-local-55432-20261029/ records probe-provider-recovery exit 0 and restates the already recorded four-path create and recovery drill. The source phrase \"already RECORDED PASS (prior)\" is not a stage approval.",
     "The server-side email auth Turnstile request gate in src/lib/auth.ts moved sourceTree and validator digests. A focused unit test covers sign-up without an HTTP request when Turnstile is disabled, and still requires a request and token when Turnstile is enabled. Retained command logs from source tree 03a98cc01995e498df99f181b887c687d1ab5e05c90c86a91819ecb9b35005aa were not re-executed for this fix. This does not close the stage, enable acceptance bootstrap, or change Stripe live/test policy. Hosted bootstrap stays broken until the web service is redeployed.",
-    "Source tree and validator digests were rebound after tests/integration/stripe-refunds.test.ts enabled operator 2FA enforcement before deleting operator_step_ups. That change closes local defect M5-LOCAL-REFUND-STEPUP-20261029 only. Stage status stays IN_PROGRESS. No live Stripe call was made, and this digest rebind is not a stage PASS.",
-    "Candidate bytes were rebound after the CI Corepack bootstrap and reviewed Nodemailer dependency registry update. Root dependency integrity and 22 root-integrity/candidate-digest regressions pass on the equivalent dependency baseline. This remains DEVELOPMENT_VERIFICATION; stage stays IN_PROGRESS and hosted/independent obligations remain open."
+    "Candidate digest refreshed after CI and OpenSpec verification tooling changes. This development record remains IN_PROGRESS and does not constitute stage approval."
   ],
   "candidateRefresh": {
-    "capturedAt": "2026-10-29T10:58:42.785Z",
+    "capturedAt": "2026-10-29T15:03:09.780Z",
     "candidateId": "m4-current-20261029",
-    "source": "git-object capture using scripts/candidate-digests.mjs canonical digest inputs",
+    "source": "GitHub PR merge-ref archive capture using scripts/candidate-digests.mjs canonical digest inputs",
     "status": "CURRENT_BYTES_CAPTURED_IN_PROGRESS",
     "fullStageAcceptance": false,
-    "sourceCommit": "0927667df20a799de4b2fefaadbf7a833f49cbce"
+    "sourceCommit": "9c90026af539680c703bc5c91fb69258bb3042b7"
   },
   "commandEvidenceApplicability": {
     "currentExecutionCommandIds": [
@@ -1328,8 +1317,7 @@
       "billing-schema",
       "hosted-web-health",
       "hosted-worker-health",
-      "probe-provider-recovery",
-      "root-dependency-integrity"
+      "probe-provider-recovery"
     ],
     "failedNotClaimed": [],
     "notRerun": [
