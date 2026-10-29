@@ -5,7 +5,7 @@ import {parseStripeTestConfiguration} from '../../src/config/billing-test.ts';
 
 function input() {
   const payload = {catalogVersion: 1, productKey: 'test-monthly', kind: 'subscription', interval: 'month', credits: '1000', amountMinor: '2500', currency: 'usd', creditExpiry: 'service_period_end', provider: 'stripe', priceReference: 'price_TestMonthly'};
-  return {driver: 'stripe_test', runtimeProfile: 'acceptance', secretKey: 'sk_test_ExampleOnly', webhookSecret: 'whsec_TestOnly', portalConfigurationId: 'bpc_TestOnly', appUrl: 'https://acceptance.example.test', catalogJson: JSON.stringify([{...payload, snapshotHash: semanticHash('billing.catalog.snapshot', payload)}])};
+  return {driver: 'stripe_test', runtimeProfile: 'acceptance', secretKey: 'sk_test_ExampleOnly', webhookSecret: 'whsec_TestOnly', portalConfigurationId: 'bpc_TestOnly', publishableKey: '', appUrl: 'https://acceptance.example.test', catalogJson: JSON.stringify([{...payload, snapshotHash: semanticHash('billing.catalog.snapshot', payload)}])};
 }
 
 test('fixture configuration stays offline even when a Stripe key exists', () => {
@@ -16,12 +16,14 @@ test('explicit acceptance test catalog is immutable and binds real price identit
   const config = parseStripeTestConfiguration(input());
   assert.equal(config?.catalog[0]?.provider, 'stripe');
   assert.equal(config?.catalog[0]?.priceReference, 'price_TestMonthly');
+  assert.equal(config?.publishableKey, null);
+  assert.equal(parseStripeTestConfiguration({...input(), publishableKey: 'pk_test_ExampleOnly'})?.publishableKey, 'pk_test_ExampleOnly');
   assert.ok(Object.isFrozen(config));
   assert.ok(Object.isFrozen(config?.catalog));
 });
 
 test('live credentials, production activation and unsafe return origins are rejected', () => {
-  for (const change of [{secretKey: 'sk_live_ExampleOnly'}, {secretKey: 'rk_live_ExampleOnly'}, {runtimeProfile: 'production'}, {runtimeProfile: 'local'}, {appUrl: 'http://acceptance.example.test'}, {appUrl: 'https://user:password@acceptance.example.test'}, {portalConfigurationId: ''}, {webhookSecret: ''}, {driver: 'stripe'}]) {
+  for (const change of [{secretKey: 'sk_live_ExampleOnly'}, {secretKey: 'rk_live_ExampleOnly'}, {publishableKey: 'pk_live_ExampleOnly'}, {publishableKey: 'sk_test_ExampleOnly'}, {runtimeProfile: 'production'}, {runtimeProfile: 'local'}, {appUrl: 'http://acceptance.example.test'}, {appUrl: 'https://user:password@acceptance.example.test'}, {portalConfigurationId: ''}, {webhookSecret: ''}, {driver: 'stripe'}]) {
     assert.throws(() => parseStripeTestConfiguration({...input(), ...change}));
   }
 });

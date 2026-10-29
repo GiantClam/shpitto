@@ -38,9 +38,28 @@ export type CheckoutResult = Readonly<{
   provider: BillingProvider;
   sessionId: string | null;
   checkoutUrl: string | null;
+  /** Stripe.js Embedded Checkout client secret. Null for fixture redirects and non-open sessions. */
+  clientSecret: string | null;
   idempotencyKey: string;
   replayed?: boolean;
 }>;
+
+/** HTTP presentation. The publishable key is not stored on the durable command result. */
+export function presentCheckoutResult(result: CheckoutResult, publishableKey?: string | null): Readonly<CheckoutResult & {publishableKey: string | null}> {
+  const key = typeof publishableKey === 'string' && /^pk_test_[A-Za-z0-9]+$/.test(publishableKey) ? publishableKey : null;
+  return Object.freeze({...result, publishableKey: result.clientSecret ? key : null});
+}
+
+export function checkoutClientFields(input: Readonly<{
+  status: CheckoutResult['status'];
+  observation: BillingCheckoutObservation;
+  previous?: Readonly<{checkoutUrl: string | null; clientSecret?: string | null}>;
+}>): Readonly<{checkoutUrl: string | null; clientSecret: string | null}> {
+  if (terminal(input.status)) return {checkoutUrl: null, clientSecret: null};
+  if ('unknown' in input.observation) return {checkoutUrl: input.previous?.checkoutUrl ?? null, clientSecret: input.previous?.clientSecret ?? null};
+  const reusable = input.observation.status === undefined || input.observation.status === 'open';
+  return {checkoutUrl: reusable ? input.observation.url : null, clientSecret: reusable ? input.observation.clientSecret ?? null : null};
+}
 
 export type PortalCommandInput = Readonly<{
   actor: WorkspaceActor;
@@ -105,12 +124,14 @@ async function finishCheckout(db: AppDatabase, input: CheckoutCommandInput, atte
     const next = mergeObservation(attempt, observation, now) ?? (!attempt.stripeSessionId && !terminal(attempt.status) ? {status: 'unknown' as const, updatedAt: now} : null);
     if (next) await tx.update(billingCheckoutAttempts).set(next).where(eq(billingCheckoutAttempts.id, attempt.id));
     const status = (next?.status ?? attempt.status) as CheckoutResult['status'];
+    const fields = checkoutClientFields({status, observation, previous});
     const result: CheckoutResult = {
       attemptId: attempt.id,
       status,
       provider: attempt.provider as BillingProvider,
       sessionId: next && 'stripeSessionId' in next ? next.stripeSessionId : attempt.stripeSessionId,
-      checkoutUrl: terminal(status) ? null : 'unknown' in observation ? previous?.checkoutUrl ?? null : observation.url,
+      checkoutUrl: fields.checkoutUrl,
+      clientSecret: fields.clientSecret,
       idempotencyKey: attempt.idempotencyKey,
     };
     await tx.update(commandResults).set({result, committedAt: now}).where(condition);
@@ -135,7 +156,7 @@ async function observeCheckout(provider: BillingCheckoutProvider, attempt: Attem
       if (!provider.retrieveCheckout) throw new DomainError('CONFLICT', 'The Stripe provider cannot retrieve the known Checkout session.');
       return provider.retrieveCheckout({...input, sessionId: attempt.stripeSessionId});
     }
-    if (previous.checkoutUrl) return {sessionId: attempt.stripeSessionId, url: previous.checkoutUrl};
+    if (previous.checkoutUrl || previous.clientSecret) return {sessionId: attempt.stripeSessionId, url: previous.checkoutUrl, clientSecret: previous.clientSecret ?? null};
     const appUrl = getServerEnv().appUrl || 'http://localhost:3100';
     return {sessionId: attempt.stripeSessionId, url: `${appUrl.replace(/\/$/, '')}/checkout/fixture/${attempt.stripeSessionId.replace('fixture_session_', '')}`};
   }
@@ -154,7 +175,7 @@ async function createCheckoutAttempt(tx: TransactionDatabase, input: CheckoutCom
     stripeSessionId: null, idempotencyKey: providerKey, status: 'creating',
     expiresAt: new Date(now.getTime() + CHECKOUT_ATTEMPT_TTL_MS), resolvedAt: null, resolutionReference: null, createdAt: now, updatedAt: now,
   });
-  return {attemptId, status: 'creating', provider, sessionId: null, checkoutUrl: null, idempotencyKey: providerKey};
+  return {attemptId, status: 'creating', provider, sessionId: null, checkoutUrl: null, clientSecret: null, idempotencyKey: providerKey};
 }
 
 export async function openCheckout(db: AppDatabase, input: CheckoutCommandInput): Promise<CheckoutResult> {
