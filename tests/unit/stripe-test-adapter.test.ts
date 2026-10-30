@@ -152,10 +152,31 @@ test('Checkout readback rejects wrong binding, price, live objects and hostile r
   const {client, adapter} = harness();
   for (const patch of [{customer: 'cus_Wrong'}, {livemode: true}, {metadata: {...checkoutMetadata(), attemptId: 'other'}}, {line_items: {has_more: true, data: []}}, {line_items: {has_more: false, data: [{quantity: 1, price: {id: 'price_Wrong'}}]}}, {url: 'https://checkout.stripe.com.evil.test/steal'}, {url: 'https://checkout.stripe.com/c/pay/cs_test_UnitSession'}, {client_secret: null}, {client_secret: 'cs_test_Other_secret_UnitSecret'}, {amount_total: 901}]) {
     client.checkout.sessions.retrieve = async () => ({...session(), ...patch});
-    assert.equal((await adapter().retrieveCheckout({...checkoutInput(), sessionId: 'cs_test_UnitSession'})).status, 'failed');
+    const result = await adapter().retrieveCheckout({...checkoutInput(), sessionId: 'cs_test_UnitSession'});
+    assert.equal(result.status, 'client_secret' in patch ? 'unknown' : 'failed');
   }
   client.checkout.sessions.retrieve = async () => ({...session(), ui_mode: 'elements'});
   assert.deepEqual(await adapter().retrieveCheckout({...checkoutInput(), sessionId: 'cs_test_UnitSession'}), {status: 'unknown', code: 'unrecognized_response'});
+});
+
+test('Checkout creation retains the remote session id when client secret validation fails', async () => {
+  const {client, adapter} = harness();
+  client.checkout.sessions.create = async () => ({...session(), client_secret: 'cs_test_UnitSession_secret_%ZZ'});
+  assert.deepEqual(await adapter().createCheckout(checkoutInput()), {
+    status: 'unknown', code: 'binding_mismatch', sessionId: 'cs_test_UnitSession',
+  });
+});
+
+test('Checkout creation returns a completed paid session without a client secret', async () => {
+  const {client, adapter} = harness();
+  client.checkout.sessions.create = async () => ({...session(), status: 'complete', payment_status: 'paid', client_secret: null});
+  const result = await adapter().createCheckout(checkoutInput());
+  assert.equal(result.status, 'succeeded');
+  if (result.status !== 'succeeded') return;
+  assert.equal(result.value.sessionId, 'cs_test_UnitSession');
+  assert.equal(result.value.status, 'complete');
+  assert.equal(result.value.paymentStatus, 'paid');
+  assert.equal(result.value.clientSecret, null);
 });
 
 test('lost Checkout response stays unknown and retry uses identical provider parameters/key', async () => {
@@ -284,7 +305,7 @@ test('embedded Checkout accepts the percent-encoded client secret Stripe.js moun
   assert.equal(read.status, 'succeeded');
   for (const clientSecret of ['cs_test_UnitSession_secret_A', 'cs_test_UnitSession_secret_%00', 'cs_test_UnitSession_secret_bad suffix', `cs_test_Other_secret_${secret.split('_secret_')[1]}`]) {
     client.checkout.sessions.create = async () => ({...session(), client_secret: clientSecret});
-    assert.equal((await adapter().createCheckout(checkoutInput())).status, 'failed', clientSecret);
+    assert.equal((await adapter().createCheckout(checkoutInput())).status, 'unknown', clientSecret);
   }
 });
 

@@ -7,7 +7,7 @@ import type {AppDatabase} from '../../db/client.ts';
 import {DomainError} from '../../db/contracts.ts';
 import {commandResults} from '../../db/schema/commands.ts';
 import {billingAccounts, billingCheckoutAttempts, billingSubscriptions} from '../../db/schema/billing.ts';
-import {createFakeBillingProvider, type BillingCheckoutObservation, type BillingCheckoutProvider} from '../../adapters/billing/fake.ts';
+import {createFakeBillingProvider, type BillingCheckoutInput, type BillingCheckoutObservation, type BillingCheckoutProvider} from '../../adapters/billing/fake.ts';
 import {parseBillingCatalogSnapshot, parseCheckoutRequest, type BillingCatalogSnapshot, type BillingProfile, type BillingProvider} from './contracts.ts';
 import {snapshotBillingProduct} from '../../config/plans.ts';
 import {executeDurableCommand} from '../shared/commands.ts';
@@ -103,11 +103,21 @@ function terminal(status: string): status is 'paid' | 'expired' | 'canceled' {
   return status === 'paid' || status === 'expired' || status === 'canceled';
 }
 
+function providerInput(attempt: Attempt): BillingCheckoutInput {
+  return {attemptId: attempt.id, workspaceId: attempt.workspaceId, customerId: attempt.customerId,
+    idempotencyKey: attempt.idempotencyKey, catalog: parseBillingCatalogSnapshot(attempt.catalogSnapshot)};
+}
+
 function mergeObservation(attempt: Attempt, observation: BillingCheckoutObservation, now: Date) {
-  if ('unknown' in observation || terminal(attempt.status)) return null;
+  if (terminal(attempt.status)) return null;
+  if ('unknown' in observation) {
+    if (!observation.sessionId) return null;
+    if (attempt.stripeSessionId && attempt.stripeSessionId !== observation.sessionId) throw new DomainError('CONFLICT', 'Checkout returned a conflicting provider session.');
+    return {status: 'unknown' as const, stripeSessionId: observation.sessionId, updatedAt: now};
+  }
   if (attempt.stripeSessionId && attempt.stripeSessionId !== observation.sessionId) throw new DomainError('CONFLICT', 'Checkout returned a conflicting provider session.');
   // Paid purchases must converge through canonical payment/subscription reconciliation.
-  const status = observation.status === 'expired' || observation.status === 'canceled' ? observation.status : 'open';
+  const status = observation.status === 'paid' && observation.completed ? 'paid' : observation.status === 'expired' || observation.status === 'canceled' ? observation.status : 'open';
   return {status, stripeSessionId: observation.sessionId, updatedAt: now,
     ...(terminal(status) ? {resolvedAt: now, resolutionReference: `provider:${observation.sessionId}:${status}`} : {})};
 }
@@ -149,8 +159,7 @@ function approvedCatalog(input: CheckoutCommandInput, productKey: string, provid
 
 async function observeCheckout(provider: BillingCheckoutProvider, attempt: Attempt, previous: CheckoutResult, now: Date): Promise<BillingCheckoutObservation> {
   if (terminal(attempt.status)) return {unknown: true};
-  const input = {attemptId: attempt.id, workspaceId: attempt.workspaceId, customerId: attempt.customerId,
-    idempotencyKey: attempt.idempotencyKey, catalog: parseBillingCatalogSnapshot(attempt.catalogSnapshot)};
+  const input = providerInput(attempt);
   if (attempt.stripeSessionId) {
     if (provider.provider === 'stripe') {
       if (!provider.retrieveCheckout) throw new DomainError('CONFLICT', 'The Stripe provider cannot retrieve the known Checkout session.');
@@ -213,8 +222,19 @@ export async function openCheckout(db: AppDatabase, input: CheckoutCommandInput)
   const [attempt] = await db.select().from(billingCheckoutAttempts).where(eq(billingCheckoutAttempts.id, preparedResult.attemptId)).limit(1);
   if (!attempt || attempt.provider !== provider.provider || attempt.workspaceId !== input.workspaceId) throw new DomainError('CONFLICT', 'The Checkout attempt does not match the configured provider or workspace.');
   const providerResult = await observeCheckout(provider, attempt, preparedResult, now);
-  const result = await finishCheckout(db, input, attempt.id, providerResult, now);
-  return {...result, replayed: prepared.replayed};
+  try {
+    const result = await finishCheckout(db, input, attempt.id, providerResult, now);
+    return {...result, replayed: prepared.replayed};
+  } catch (error) {
+    if (provider.expireCheckout && 'sessionId' in providerResult && providerResult.sessionId) {
+      try {
+        await provider.expireCheckout({...providerInput(attempt), sessionId: providerResult.sessionId});
+      } catch {
+        // Preserve the durable binding error. The session remains visible for manual reconciliation if expiry also fails.
+      }
+    }
+    throw error;
+  }
 }
 
 export async function openBillingPortal(db: AppDatabase, input: PortalCommandInput): Promise<PortalResult> {

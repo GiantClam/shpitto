@@ -99,6 +99,48 @@ test('fixture defaults still create and replay deterministic Checkout and portal
   assert.match(portal.portalUrl, /\/billing\/portal\/fixture\//);
 });
 
+test('a provider session id is persisted even when the provider result is unknown', async () => {
+  let expired = 0;
+  const input = await fixture({provider: provider({
+    async createCheckout() { return {unknown: true, sessionId: 'cs_orphan_after_secret_check'}; },
+    async expireCheckout() { expired++; },
+  })});
+  const result = await openCheckout(db, input);
+  assert.equal(result.status, 'unknown');
+  assert.equal(result.sessionId, 'cs_orphan_after_secret_check');
+  assert.equal((await attempts(input.workspaceId))[0]!.stripe_session_id, 'cs_orphan_after_secret_check');
+  assert.equal(expired, 0);
+});
+
+test('a completed paid Checkout is persisted as paid without reissuing a client secret', async () => {
+  const input = await fixture({provider: provider({
+    async createCheckout() { return {sessionId: 'cs_complete_paid', url: null, clientSecret: null, status: 'paid', completed: true}; },
+  })});
+  const result = await openCheckout(db, input);
+  assert.equal(result.status, 'paid');
+  assert.equal(result.sessionId, 'cs_complete_paid');
+  assert.equal(result.clientSecret, null);
+  assert.equal((await attempts(input.workspaceId))[0]!.status, 'paid');
+});
+
+test('a session is expired when durable binding fails after remote creation', async () => {
+  const entered = deferred<void>();
+  const release = deferred<void>();
+  let expired = 0;
+  const remote = provider({
+    async createCheckout() { entered.resolve(); await release.promise; return {unknown: true, sessionId: 'cs_orphan_on_write_failure'}; },
+    async expireCheckout(input) { assert.equal(input.sessionId, 'cs_orphan_on_write_failure'); expired++; },
+  });
+  const input = await fixture({provider: remote});
+  const operation = openCheckout(db, input);
+  await entered.promise;
+  const attempt = (await attempts(input.workspaceId))[0]!;
+  await pool.query('update app.billing_checkout_attempts set stripe_session_id=$2 where id=$1', [attempt.id, 'cs_conflicting_session']);
+  release.resolve();
+  await assert.rejects(operation, /conflicting provider session/i);
+  assert.equal(expired, 1);
+});
+
 test('Stripe requires explicit server catalog; fixture terms cannot be relabeled as Stripe', async () => {
   const input = await fixture({snapshotBillingProduct: undefined});
   await assert.rejects(openCheckout(db, input), /catalog/i);

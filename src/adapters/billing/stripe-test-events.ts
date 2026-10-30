@@ -11,7 +11,7 @@ type Price = Pick<Stripe.Price, 'id' | 'livemode' | 'currency' | 'unit_amount' |
   type: string; recurring: Readonly<{interval: string; interval_count: number; usage_type: string}> | null;
 }>;
 type Session = Pick<Stripe.Checkout.Session, 'id' | 'livemode' | 'currency' | 'amount_total' | 'amount_subtotal'> & Readonly<{
-  customer: Reference; payment_intent: Reference; subscription: Reference; invoice: Reference;
+  customer: Reference; payment_intent: Reference; subscription: Reference; invoice: Reference; metadata?: Readonly<Record<string, string>> | null; client_reference_id?: string | null;
   mode: string; status: string | null; payment_status: string;
   automatic_tax: Readonly<{enabled: boolean}>; discounts: readonly unknown[] | null;
   total_details: Readonly<{amount_discount: number; amount_tax: number; amount_shipping: number | null}> | null;
@@ -297,11 +297,15 @@ export function createStripeTestEventMapper(client: StripeTestEventClient) {
 
   function scope(state: Canonical): StripeTestEventDiscovery {
     const reason = state.invoice?.billing_reason;
+    const sessionMetadata = state.session?.metadata;
+    const attemptId = sessionMetadata?.attemptId ?? state.session?.client_reference_id ?? undefined;
+    const checkout = state.session ? {attemptId, workspaceId: sessionMetadata?.workspaceId, customerId: sessionMetadata?.customerId,
+      catalogHash: sessionMetadata?.catalogHash, amountMinor: money(state.session.amount_total ?? 0), currency: state.session.currency ?? undefined} : undefined;
     return Object.freeze({hint: state.hint, provider: 'stripe', customerId: state.customerId,
       ...(state.session ? {checkoutSessionId: state.session.id} : {}), ...(state.invoice ? {invoiceId: state.invoice.id} : {}),
       ...(state.intent ? {paymentIntentId: state.intent.id} : {}), ...(state.charge ? {chargeId: state.charge.id} : {}),
       ...(state.subscription ? {externalSubscriptionId: state.subscription.id} : {}),
-      ...(reason ? {stripe: {billingReason: reason}} : {})});
+      ...((reason || checkout) ? {stripe: {...(reason ? {billingReason: reason} : {}), ...(checkout ? {checkout} : {})}} : {})});
   }
 
   async function discoverIdentity(hint: StripeTestEventHint): Promise<StripeTestEventDiscovery> {return scope(await canonical(hint));}

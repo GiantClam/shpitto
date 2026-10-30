@@ -16,6 +16,7 @@ import {attachPaymentAliases, findCanonicalOrderId} from './payment-aliases.ts';
 import {recordBillingRecoveryInTransaction} from './recovery.ts';
 import {recordAffiliatePaymentInTransaction} from '../affiliates/runtime.ts';
 import {consumeReconciliationFence, recordReconciliationHold, resolveReconciliationScope} from './reconciliation-fence.ts';
+import {recordOperatorAudit} from '../operations/audit.ts';
 
 export type PaymentEventType = 'checkout.completed' | 'invoice.paid' | 'payment_intent.succeeded' | 'payment.failed' | 'charge.refunded' | 'charge.dispute.created' | 'charge.dispute.lost' | 'charge.dispute.reversed';
 
@@ -50,6 +51,8 @@ export type PaymentObservation = Readonly<{
     paymentAmountMinor: string;
     billingReason?: 'subscription_create' | 'subscription_cycle';
   }>;
+  /** Server-only fallback candidate selected from a verified Checkout metadata attempt id. */
+  checkoutAttemptId?: string;
 }>;
 
 export type ReconcileResult = Readonly<{
@@ -115,6 +118,33 @@ async function openRecoveryCase(tx: TransactionDatabase, input: Readonly<{worksp
 
 function snapshotForAttempt(attempt: typeof billingCheckoutAttempts.$inferSelect): BillingCatalogSnapshot {
   return parseBillingCatalogSnapshot(attempt.catalogSnapshot);
+}
+
+async function rebindStripeCheckoutAttempt(tx: TransactionDatabase, input: PaymentObservation, workspaceId: string, now: Date): Promise<void> {
+  if (input.provider !== 'stripe' || !input.checkoutAttemptId) return;
+  if (!input.checkoutSessionId || !input.customerId || !input.stripe?.supported || !input.amountMinor || !input.currency) {
+    throw new DomainError('CONFLICT', 'Stripe Checkout fallback binding lacks verified payment identity.');
+  }
+  const attempt = (await tx.select().from(billingCheckoutAttempts).where(and(eq(billingCheckoutAttempts.id, input.checkoutAttemptId), eq(billingCheckoutAttempts.provider, 'stripe'))).for('update').limit(1))[0];
+  if (!attempt || attempt.workspaceId !== workspaceId || attempt.customerId !== input.customerId) throw new DomainError('CONFLICT', 'Stripe Checkout fallback binding conflicts with the persisted workspace or customer.');
+  if (attempt.stripeSessionId && attempt.stripeSessionId !== input.checkoutSessionId) throw new DomainError('CONFLICT', 'Stripe Checkout fallback binding conflicts with an existing session.');
+  const catalog = snapshotForAttempt(attempt);
+  if (catalog.provider !== 'stripe' || input.stripe.priceReference !== catalog.priceReference || input.currency !== catalog.currency || input.amountMinor !== catalog.amountMinor || input.stripe.paymentAmountMinor !== catalog.amountMinor) {
+    throw new DomainError('CONFLICT', 'Stripe Checkout fallback binding conflicts with the persisted price, amount, or currency.');
+  }
+  if (!['creating', 'open', 'unknown'].includes(attempt.status)) throw new DomainError('CONFLICT', 'Stripe Checkout fallback binding is no longer open for repair.');
+  if (attempt.stripeSessionId === input.checkoutSessionId) return;
+  await tx.update(billingCheckoutAttempts).set({stripeSessionId: input.checkoutSessionId, updatedAt: now}).where(eq(billingCheckoutAttempts.id, attempt.id));
+  const workspace = (await tx.select({createdBy: workspaces.createdBy}).from(workspaces).where(eq(workspaces.id, workspaceId)).limit(1))[0];
+  if (!workspace) throw new DomainError('NOT_FOUND', 'Workspace not found.');
+  await recordOperatorAudit(tx, {
+    actorUserId: workspace.createdBy,
+    workspaceId,
+    commandName: 'billing.stripe.checkout-rebind',
+    commandKey: `${input.eventId}:${attempt.id}`,
+    payload: {attemptId: attempt.id, checkoutSessionId: input.checkoutSessionId, eventId: input.eventId, priceReference: input.stripe.priceReference, amountMinor: input.amountMinor, currency: input.currency},
+    now,
+  });
 }
 
 type ResolvedOrder = Readonly<{orderId: string; order: typeof billingOrders.$inferSelect; catalog: BillingCatalogSnapshot; workspaceId: string; customerId: string; attemptId: string | null}>;
@@ -273,6 +303,7 @@ export async function reconcilePayment(db: AppDatabase, input: PaymentObservatio
     if (input.provider === 'stripe') {
       await consumeReconciliationFence(tx, stripeWorkspaceId!, input.fence, now);
       try {
+        await rebindStripeCheckoutAttempt(tx, input, stripeWorkspaceId!, now);
         stripeResolved = await resolveStripeOrder(tx, input, paymentAliases, stripeWorkspaceId!, now);
       } catch (error) {
         if (!(error instanceof DomainError)) throw error;

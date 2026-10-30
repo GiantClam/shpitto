@@ -19,7 +19,10 @@ export type ReconciliationScope = Readonly<{
   paymentIntentId?: string;
   chargeId?: string;
   externalSubscriptionId?: string;
-  stripe?: Readonly<{billingReason?: string}>;
+  stripe?: Readonly<{
+    billingReason?: string;
+    checkout?: Readonly<{attemptId?: string; workspaceId?: string; customerId?: string; catalogHash?: string; amountMinor?: string; currency?: string}>;
+  }>;
 }>;
 
 /** Provider mappers call this on trusted object identities, never metadata tenant hints alone. */

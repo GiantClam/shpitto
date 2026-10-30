@@ -36,6 +36,7 @@ export type StripeTestClient = {
   checkout: {sessions: {
     create(params: Stripe.Checkout.SessionCreateParams, options: Stripe.RequestOptions): Promise<Session>;
     retrieve(id: string, params: Stripe.Checkout.SessionRetrieveParams): Promise<Session>;
+    expire?(id: string): Promise<Session>;
   }};
   paymentIntents: {retrieve(id: string): Promise<PaymentIntent>};
   refunds: {
@@ -53,6 +54,7 @@ export type StripeTestClient = {
 export type StripeTestProblem = Readonly<{
   status: 'failed' | 'unknown';
   code: 'invalid_input' | 'binding_mismatch' | 'provider_rejected' | 'provider_unavailable' | 'not_found' | 'lookup_incomplete' | 'unrecognized_response';
+  sessionId?: string;
 }>;
 /** succeeded means a verified provider response, NOT a paid Checkout or a credit entitlement. */
 export type StripeTestResult<T> = Readonly<{status: 'succeeded'; value: Readonly<T>}> | StripeTestProblem;
@@ -83,6 +85,14 @@ class AdapterFault extends Error {
   constructor(code: StripeTestProblem['code'], status: StripeTestProblem['status'] = 'failed') {
     super('The Stripe test adapter could not verify the operation.');
     this.problem = Object.freeze({status, code});
+  }
+}
+
+class CheckoutSessionFault extends AdapterFault {
+  readonly sessionId: string;
+  constructor(sessionId: string) {
+    super('binding_mismatch', 'unknown');
+    this.sessionId = sessionId;
   }
 }
 
@@ -117,6 +127,7 @@ function boundMetadata(observed: Metadata | null, expected: Metadata): void {
 }
 
 function safeProblem(error: unknown): StripeTestProblem {
+  if (error instanceof CheckoutSessionFault) return Object.freeze({status: 'unknown', code: error.problem.code, sessionId: error.sessionId});
   if (error instanceof AdapterFault) return error.problem;
   // No SDK message, raw body, request, headers or provider error code crosses this boundary.
   const type = error && typeof error === 'object' && 'type' in error ? error.type : null;
@@ -209,11 +220,11 @@ function checkoutClientSecret(session: Session): string | null {
   if (secret == null) return null;
   const prefix = `${session.id}_secret_`;
   const suffix = secret.startsWith(prefix) ? secret.slice(prefix.length) : '';
-  requireValue(EMBEDDED_CLIENT_SECRET_SUFFIX.test(suffix));
+  if (!EMBEDDED_CLIENT_SECRET_SUFFIX.test(suffix)) throw new CheckoutSessionFault(session.id);
   try {
-    requireValue(atob(decodeURIComponent(suffix)).length > 0);
+    if (atob(decodeURIComponent(suffix)).length === 0) throw new Error();
   } catch {
-    throw new AdapterFault('binding_mismatch');
+    throw new CheckoutSessionFault(session.id);
   }
   return secret;
 }
@@ -240,7 +251,7 @@ function checkoutValue(session: Session, input: StripeTestCheckoutInput, session
   // while the test account cannot accept charges; the client secret is the payable surface.
   if (embedded) requireValue(hostedUrl === null);
   if (!embedded) requireValue(clientSecret === null && (session.status !== 'open' || hostedUrl));
-  if (embedded && session.status === 'open') requireValue(clientSecret);
+  if (embedded && session.status === 'open' && !clientSecret) throw new CheckoutSessionFault(session.id);
   const paymentIntentId = reference(session.payment_intent);
   const subscriptionId = reference(session.subscription);
   if (paymentIntentId) identifier(paymentIntentId, 'pi_');
@@ -335,8 +346,8 @@ export function createStripeTestAdapter(config: StripeTestAdapterConfig) {
         return customerValue(found, {...input, customerId: found.id});
       });
     },
-    createCheckout(raw: StripeTestCheckoutInput): Promise<StripeTestResult<StripeTestCheckout>> {
-      return checked(async () => {
+    async createCheckout(raw: StripeTestCheckoutInput): Promise<StripeTestResult<StripeTestCheckout>> {
+      try {
         const input = checkoutInput(raw);
         await verifyCheckout(input, true);
         const metadata = checkoutMetadata(input);
@@ -347,8 +358,10 @@ export function createStripeTestAdapter(config: StripeTestAdapterConfig) {
           ui_mode: 'embedded_page', redirect_on_completion: 'always', return_url: `${returnUrl(input.workspaceId)}?checkout=return&session_id={CHECKOUT_SESSION_ID}`,
           allow_promotion_codes: false, automatic_tax: {enabled: false}, adaptive_pricing: {enabled: false}, expand: ['line_items.data.price'],
         };
-        return checkoutValue(await client.checkout.sessions.create(params, {idempotencyKey: input.idempotencyKey}), input, undefined, true);
-      });
+        return Object.freeze({status: 'succeeded', value: Object.freeze(checkoutValue(await client.checkout.sessions.create(params, {idempotencyKey: input.idempotencyKey}), input, undefined, true))});
+      } catch (error) {
+        return safeProblem(error);
+      }
     },
     retrieveCheckout(raw: StripeTestCheckoutInput & Readonly<{sessionId: string}>): Promise<StripeTestResult<StripeTestCheckout>> {
       return checked(async () => {
@@ -357,6 +370,17 @@ export function createStripeTestAdapter(config: StripeTestAdapterConfig) {
         await verifyCheckout(input, false);
         return checkoutValue(await client.checkout.sessions.retrieve(sessionId, {expand: ['line_items.data.price']}), input, sessionId);
       });
+    },
+    async expireCheckout(raw: StripeTestCheckoutInput & Readonly<{sessionId: string}>): Promise<StripeTestResult<StripeTestCheckout>> {
+      try {
+        const input = checkoutInput(raw);
+        const sessionId = identifier(raw.sessionId, 'cs_test_');
+        await verifyCheckout(input, false);
+        if (!client.checkout.sessions.expire) throw new AdapterFault('provider_unavailable', 'unknown');
+        return Object.freeze({status: 'succeeded', value: Object.freeze(checkoutValue(await client.checkout.sessions.expire(sessionId), input, sessionId))});
+      } catch (error) {
+        return safeProblem(error);
+      }
     },
     createPortal(raw: StripeTestPortalInput): Promise<StripeTestResult<StripeTestPortal>> {
       return checked(async () => {

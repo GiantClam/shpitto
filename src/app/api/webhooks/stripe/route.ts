@@ -20,7 +20,7 @@ export async function POST(request: Request) {
       const db = getAuthDatabase();
       const result = await processStripeTestDelivery(db, {eventId: verified.hint.eventId, eventType: verified.hint.eventType,
         objectId: verified.hint.objectId, payloadHash: verified.payloadHash,
-        process: () => reconcileStripeTestEvent(db, {hint: verified.hint, mapper: stripe.mapper})});
+        process: (context) => reconcileStripeTestEvent(db, {hint: verified.hint, mapper: stripe.mapper, attemptNumber: context.attemptNumber})});
       return safeSuccess(result, result.duplicate ? 200 : 202);
     }
     const env = getServerEnv();

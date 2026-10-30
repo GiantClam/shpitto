@@ -27,13 +27,27 @@ test('embedded Checkout exposes the client secret and does not require a hosted 
     createCheckout: async () => ({status: 'succeeded', value: {sessionId: 'cs_test_a', status: 'open', paymentStatus: 'unpaid', url: null, clientSecret: secret}}),
     retrieveCheckout: async () => ({status: 'succeeded', value: {sessionId: 'cs_test_a', status: 'open', paymentStatus: 'unpaid', url: null, clientSecret: secret}}),
   }));
-  assert.deepEqual(await provider.createCheckout({} as never), {sessionId: 'cs_test_a', url: null, clientSecret: secret});
+  assert.deepEqual(await provider.createCheckout({} as never), {sessionId: 'cs_test_a', url: null, clientSecret: secret, status: 'open'});
   assert.deepEqual(await provider.retrieveCheckout!({} as never), {sessionId: 'cs_test_a', url: null, clientSecret: secret, status: 'open'});
+});
+
+test('the bridge preserves an unknown Checkout session id for durable binding', async () => {
+  const provider = createStripeCheckoutProvider(adapter({
+    createCheckout: async () => ({status: 'unknown', code: 'binding_mismatch', sessionId: 'cs_test_a'}),
+  }));
+  assert.deepEqual(await provider.createCheckout({} as never), {unknown: true, sessionId: 'cs_test_a'});
+});
+
+test('the bridge maps a completed paid Checkout to a terminal paid observation', async () => {
+  const provider = createStripeCheckoutProvider(adapter({
+    createCheckout: async () => ({status: 'succeeded', value: {sessionId: 'cs_test_a', status: 'complete', paymentStatus: 'paid', url: null, clientSecret: null}}),
+  }));
+  assert.deepEqual(await provider.createCheckout({} as never), {sessionId: 'cs_test_a', url: null, clientSecret: null, status: 'paid', completed: true});
 });
 
 test('a hosted url without a client secret is not a usable new Checkout', async () => {
   const provider = createStripeCheckoutProvider(adapter());
-  assert.deepEqual(await provider.createCheckout({} as never), {unknown: true});
+  assert.deepEqual(await provider.createCheckout({} as never), {unknown: true, sessionId: 'cs_test_a'});
 });
 
 test('completed Checkout does not reissue an embedded client secret', async () => {
@@ -54,5 +68,5 @@ test('unknown responses remain unresolved and failed responses do not become suc
 
 test('a completed unpaid Checkout never becomes paid or a new open URL', async () => {
   const provider = createStripeCheckoutProvider(adapter({retrieveCheckout: async () => ({status: 'succeeded', value: {sessionId: 'cs_test_a', status: 'complete', paymentStatus: 'unpaid', url: null}})}));
-  assert.deepEqual(await provider.retrieveCheckout!({} as never), {unknown: true});
+  assert.deepEqual(await provider.retrieveCheckout!({} as never), {unknown: true, sessionId: 'cs_test_a'});
 });

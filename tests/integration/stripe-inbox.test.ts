@@ -9,7 +9,7 @@ import * as schema from '../../src/db/schema/index.ts';
 import type {AppDatabase} from '../../src/db/client.ts';
 import {processStripeTestDelivery} from '../../src/modules/billing/stripe-test-inbox.ts';
 import {reconcileStripeTestEvent} from '../../src/modules/billing/stripe-test-reconciliation.ts';
-import {parseBillingCatalogSnapshot} from '../../src/modules/billing/contracts.ts';
+import {parseBillingCatalogSnapshot, type ReconciliationFence} from '../../src/modules/billing/contracts.ts';
 import {semanticHash} from '../../src/contracts/http.ts';
 import type {createStripeTestEventMapper, StripeTestEventHint} from '../../src/adapters/billing/stripe-test-events.ts';
 
@@ -132,4 +132,84 @@ test('the application resolves immutable terms, commits its claim before fetch, 
   await assert.rejects(reconcileStripeTestEvent(db, {hint: refundHint, mapper: refundMapper}), /second read failed/);
   assert.equal((await pool.query('select reconciliation_lease_token from app.billing_accounts where workspace_id=$1', [workspaceId])).rows[0].reconciliation_lease_token, null);
   assert.equal((await pool.query('select * from app.billing_cash_events where workspace_id=$1', [workspaceId])).rowCount, 1);
+});
+
+test('an orphan Checkout session is rebound from metadata before checkout and invoice settlement', async () => {
+  const workspaceId = randomUUID();
+  const userId = `inbox-orphan-${randomUUID()}`;
+  const customerId = `cus_${randomUUID().replaceAll('-', '')}`;
+  const attemptId = randomUUID();
+  const sessionId = `cs_test_${randomUUID().replaceAll('-', '')}`;
+  const terms = {catalogVersion: 1, productKey: 'orphan-pack', kind: 'pack', interval: null, credits: '250', amountMinor: '900', currency: 'usd', creditExpiry: 'never', provider: 'stripe', priceReference: 'price_orphan'};
+  const snapshot = parseBillingCatalogSnapshot({...terms, snapshotHash: semanticHash('billing.catalog.snapshot', terms)});
+  await pool.query('insert into "user" (id,name,email,email_verified,created_at,updated_at) values ($1,$1,$2,true,now(),now())', [userId, `${userId}@example.test`]);
+  await pool.query("insert into app.workspaces (id,kind,name,created_by,created_at,updated_at) values ($1,'team','Orphan test',$2,now(),now())", [workspaceId, userId]);
+  await pool.query('insert into app.billing_accounts (workspace_id,created_at,updated_at) values ($1,now(),now())', [workspaceId]);
+  await pool.query('insert into app.credit_accounts (workspace_id,created_at,updated_at) values ($1,now(),now())', [workspaceId]);
+  await pool.query("insert into app.billing_customer_history (workspace_id,provider,customer_id,valid_from,change_reason) values ($1,'stripe',$2,now(),'Orphan test binding')", [workspaceId, customerId]);
+  await pool.query("insert into app.billing_checkout_attempts (id,workspace_id,provider,customer_id,kind,catalog_snapshot,idempotency_key,status,created_at,updated_at) values ($1,$2,'stripe',$3,'pack',$4,$5,'open',now(),now())", [attemptId, workspaceId, customerId, snapshot, `checkout:${attemptId}`]);
+
+  let currentHint: StripeTestEventHint = {eventId: 'evt_orphan_checkout', eventType: 'checkout.session.completed', objectId: sessionId, objectType: 'checkout.session', livemode: false};
+  const mapper = {
+    discoverIdentity: async (hint: StripeTestEventHint) => ({provider: 'stripe' as const, hint, customerId, checkoutSessionId: sessionId,
+      ...(hint.eventType === 'invoice.paid' ? {invoiceId: 'in_orphan'} : {}),
+      stripe: {checkout: {attemptId, workspaceId, customerId, catalogHash: snapshot.snapshotHash, amountMinor: '900', currency: 'usd'}}}),
+    normalize: async (_discovery: unknown, binding: {catalogSnapshot: typeof snapshot}, fence: ReconciliationFence) => {
+      assert.equal(binding.catalogSnapshot.snapshotHash, snapshot.snapshotHash);
+      const invoice = currentHint.eventType === 'invoice.paid' ? {invoiceId: 'in_orphan', eventType: 'invoice.paid' as const} : {eventType: 'checkout.completed' as const};
+      return [{provider: 'stripe' as const, eventId: currentHint.eventId, ...invoice, workspaceId, customerId, checkoutSessionId: sessionId,
+        paymentIntentId: 'pi_orphan', chargeId: 'ch_orphan', amountMinor: '900', currency: 'usd', paidAt: new Date(Date.now() - 1000).toISOString(),
+        stripe: {supported: true, priceReference: 'price_orphan', paymentAmountMinor: '900'}, fence}];
+    },
+    normalizeSubscription: async () => null,
+  } satisfies Pick<ReturnType<typeof createStripeTestEventMapper>, 'discoverIdentity' | 'normalize' | 'normalizeSubscription'>;
+  const fullMapper = {...mapper, discover: mapper.discoverIdentity};
+
+  const first = await processStripeTestDelivery(db, {eventId: currentHint.eventId, eventType: currentHint.eventType, objectId: currentHint.objectId, payloadHash: 'c'.repeat(64),
+    process: (context) => reconcileStripeTestEvent(db, {hint: currentHint, mapper: fullMapper, attemptNumber: context.attemptNumber})});
+  assert.equal(first.reconciliation[0]!.status, 'paid');
+  assert.equal((await pool.query('select stripe_session_id,status from app.billing_checkout_attempts where id=$1', [attemptId])).rows[0].stripe_session_id, sessionId);
+  assert.equal((await pool.query('select count(*)::int as count from app.credit_grants where workspace_id=$1', [workspaceId])).rows[0].count, 1);
+  assert.equal((await pool.query("select count(*)::int as count from app.audit_events where workspace_id=$1 and command_name='billing.stripe.checkout-rebind'", [workspaceId])).rows[0].count, 1);
+
+  currentHint = {eventId: 'evt_orphan_invoice', eventType: 'invoice.paid', objectId: 'in_orphan', objectType: 'invoice', livemode: false};
+  const second = await processStripeTestDelivery(db, {eventId: currentHint.eventId, eventType: currentHint.eventType, objectId: currentHint.objectId, payloadHash: 'd'.repeat(64),
+    process: (context) => reconcileStripeTestEvent(db, {hint: currentHint, mapper: fullMapper, attemptNumber: context.attemptNumber})});
+  assert.equal(second.reconciliation[0]!.status, 'duplicate');
+  const replay = await processStripeTestDelivery(db, {eventId: currentHint.eventId, eventType: currentHint.eventType, objectId: currentHint.objectId, payloadHash: 'd'.repeat(64),
+    process: (context) => reconcileStripeTestEvent(db, {hint: currentHint, mapper: fullMapper, attemptNumber: context.attemptNumber})});
+  assert.equal(replay.duplicate, true);
+  assert.equal((await pool.query('select count(*)::int as count from app.credit_grants where workspace_id=$1', [workspaceId])).rows[0].count, 1);
+});
+
+test('an unbound delivery becomes a manual reconciliation case after the retry limit', async () => {
+  const workspaceId = randomUUID();
+  const userId = 'inbox-retry-' + randomUUID();
+  const customerId = 'cus_' + randomUUID().replaceAll('-', '');
+  const attemptId = randomUUID();
+  const terms = {catalogVersion: 1, productKey: 'retry-pack', kind: 'pack', interval: null, credits: '250', amountMinor: '900', currency: 'usd', creditExpiry: 'never', provider: 'stripe', priceReference: 'price_retry'};
+  const snapshot = parseBillingCatalogSnapshot({...terms, snapshotHash: semanticHash('billing.catalog.snapshot', terms)});
+  await pool.query('insert into "user" (id,name,email,email_verified,created_at,updated_at) values ($1,$1,$2,true,now(),now())', [userId, userId + '@example.test']);
+  await pool.query("insert into app.workspaces (id,kind,name,created_by,created_at,updated_at) values ($1,'team','Retry test',$2,now(),now())", [workspaceId, userId]);
+  await pool.query('insert into app.billing_accounts (workspace_id,created_at,updated_at) values ($1,now(),now())', [workspaceId]);
+  await pool.query("insert into app.billing_customer_history (workspace_id,provider,customer_id,valid_from,change_reason) values ($1,'stripe',$2,now(),'Retry test binding')", [workspaceId, customerId]);
+  await pool.query("insert into app.billing_checkout_attempts (id,workspace_id,provider,customer_id,kind,catalog_snapshot,idempotency_key,status,created_at,updated_at) values ($1,$2,'stripe',$3,'pack',$4,$5,'creating',now(),now())", [attemptId, workspaceId, customerId, snapshot, 'checkout:' + attemptId]);
+  const hint: StripeTestEventHint = {eventId: 'evt_retry_manual', eventType: 'checkout.session.completed', objectId: 'cs_test_retry_manual', objectType: 'checkout.session', livemode: false};
+  const mapper = {
+    discoverIdentity: async () => ({provider: 'stripe' as const, hint, customerId, checkoutSessionId: hint.objectId}),
+    normalize: async () => [],
+    normalizeSubscription: async () => null,
+  } satisfies Pick<ReturnType<typeof createStripeTestEventMapper>, 'discoverIdentity' | 'normalize' | 'normalizeSubscription'>;
+  const fullMapper = {...mapper, discover: mapper.discoverIdentity};
+  const base = new Date('2026-10-30T00:00:00Z');
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    const now = new Date(base.getTime() + attempt * 121_000);
+    await assert.rejects(processStripeTestDelivery(db, {eventId: hint.eventId, eventType: hint.eventType, objectId: hint.objectId, payloadHash: 'e'.repeat(64), now,
+      process: (context) => reconcileStripeTestEvent(db, {hint, mapper: fullMapper, attemptNumber: context.attemptNumber})}), /purchase binding.*pending/i);
+  }
+  const manual = await processStripeTestDelivery(db, {eventId: hint.eventId, eventType: hint.eventType, objectId: hint.objectId, payloadHash: 'e'.repeat(64), now: new Date(base.getTime() + 4 * 121_000),
+    process: (context) => reconcileStripeTestEvent(db, {hint, mapper: fullMapper, attemptNumber: context.attemptNumber})});
+  assert.equal(manual.reconciliation[0]!.status, 'held');
+  assert.equal((await pool.query("select status from app.billing_webhook_inbox where external_event_id=$1", [hint.eventId])).rows[0].status, 'processed');
+  assert.equal((await pool.query("select count(*)::int as count from app.billing_reconciliation_cases where workspace_id=$1 and reason like 'Stripe Checkout binding did not arrive%'", [workspaceId])).rows[0].count, 1);
 });
