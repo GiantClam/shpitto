@@ -148,12 +148,29 @@ test('a claim commits before remote work and a newer generation or expired lease
   } finally { await client.end(); }
   const later = new Date(now.getTime() + 2000);
   const fresh = await claimReconciliation(db, {workspaceId: f.workspaceId, owner: 'new-fetch', now: later});
-  await assert.rejects(reconcilePayment(db, {...f.input, fence: stale}, later), /fence|lease|stale/i);
+  await assert.rejects(reconcilePayment(db, {...f.input, fence: stale}, later), (error: unknown) => {
+    assert.ok(error instanceof Error && /fence|lease|stale/i.test(error.message));
+    assert.equal((error as {code?: string}).code, 'INFRASTRUCTURE');
+    return true;
+  });
   assert.equal((await rows('billing_orders', f.workspaceId)).length, 0);
   assert.equal((await reconcilePayment(db, {...f.input, fence: fresh}, later)).status, 'paid');
-  await assert.rejects(reconcilePayment(db, {...f.input, fence: fresh}, new Date(later.getTime() + 60_001)), /fence|lease|stale/i);
+  await assert.rejects(reconcilePayment(db, {...f.input, fence: fresh}, new Date(later.getTime() + 60_001)), (error: unknown) => {
+    assert.ok(error instanceof Error && /fence|lease|stale/i.test(error.message));
+    assert.equal((error as {code?: string}).code, 'INFRASTRUCTURE');
+    return true;
+  });
 });
 
+test('a live reconciliation lease is retryable infrastructure state', async () => {
+  const f = await fixture();
+  await claimReconciliation(db, {workspaceId: f.workspaceId, owner: 'active-fetch', now, leaseMs: 60_000});
+  await assert.rejects(claimReconciliation(db, {workspaceId: f.workspaceId, owner: 'retry-fetch', now}), (error: unknown) => {
+    assert.equal((error as {code?: string}).code, 'INFRASTRUCTURE');
+    assert.match((error as Error).message, /lease is already claimed/i);
+    return true;
+  });
+});
 test('refund-before-paid persists cash evidence and late failed/paid deliveries cannot restore entitlement', async () => {
   const f = await fixture();
   assert.equal((await apply({...f.input, eventId: 'evt_refund_first', eventType: 'charge.refunded', refundId: 're_before_paid'})).status, 'recovery');
@@ -168,7 +185,11 @@ test('refund-before-paid persists cash evidence and late failed/paid deliveries 
 
 test('Stripe needs a fence, persisted catalog binding, verified amounts, currency, and supported paid semantics', async () => {
   const missingFence = await fixture();
-  await assert.rejects(reconcilePayment(db, missingFence.input, now), /fence/i);
+  await assert.rejects(reconcilePayment(db, missingFence.input, now), (error: unknown) => {
+    assert.equal((error as {code?: string}).code, 'INFRASTRUCTURE');
+    assert.match((error as Error).message, /fence/i);
+    return true;
+  });
   for (const update of [{stripe: undefined}, {amountMinor: undefined}, {currency: undefined}, {currency: 'eur'}, {stripe: {...missingFence.input.stripe!, priceReference: 'price_wrong'}}, {stripe: {...missingFence.input.stripe!, supported: false}}]) {
     const f = await fixture();
     assert.equal((await apply({...f.input, ...update})).status, 'held');

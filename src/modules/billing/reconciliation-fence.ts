@@ -71,7 +71,7 @@ export async function claimReconciliation(db: AppDatabase, input: Readonly<{work
     await tx.select({id: workspaces.id}).from(workspaces).where(eq(workspaces.id, input.workspaceId)).for('update').limit(1);
     const account = (await tx.select().from(billingAccounts).where(eq(billingAccounts.workspaceId, input.workspaceId)).for('update').limit(1))[0];
     if (!account) throw new DomainError('NOT_FOUND', 'Workspace billing is not initialized.');
-    if (account.reconciliationLeaseUntil && account.reconciliationLeaseUntil > now) throw new DomainError('CONFLICT', 'Reconciliation lease is already claimed.');
+    if (account.reconciliationLeaseUntil && account.reconciliationLeaseUntil > now) throw new DomainError('INFRASTRUCTURE', 'Reconciliation lease is already claimed.');
     const token = randomUUID();
     const generation = account.reconciliationGeneration + 1n;
     const leaseUntil = new Date(now.getTime() + leaseMs);
@@ -82,13 +82,13 @@ export async function claimReconciliation(db: AppDatabase, input: Readonly<{work
 
 /** Lock in workspace -> billing order and consume exactly one live claim atomically with apply. */
 export async function consumeReconciliationFence(tx: TransactionDatabase, workspaceId: string, fence: ReconciliationFence | undefined, now: Date): Promise<void> {
-  if (!fence || fence.workspaceId !== workspaceId) throw new DomainError('CONFLICT', 'A matching reconciliation fence is required.');
+  if (!fence || fence.workspaceId !== workspaceId) throw new DomainError('INFRASTRUCTURE', 'A matching reconciliation fence is required.');
   await tx.select({id: workspaces.id}).from(workspaces).where(eq(workspaces.id, workspaceId)).for('update').limit(1);
   const account = (await tx.select().from(billingAccounts).where(eq(billingAccounts.workspaceId, workspaceId)).for('update').limit(1))[0];
   if (!account || account.reconciliationLeaseToken !== fence.token || account.reconciliationLeaseOwner !== fence.owner ||
       account.reconciliationGeneration.toString() !== fence.generation || !account.reconciliationLeaseUntil ||
       account.reconciliationLeaseUntil.toISOString() !== fence.leaseUntil || account.reconciliationLeaseUntil <= now) {
-    throw new DomainError('CONFLICT', 'Reconciliation fence is stale or its lease expired.');
+    throw new DomainError('INFRASTRUCTURE', 'Reconciliation fence is stale or its lease expired.');
   }
   await tx.update(billingAccounts).set({reconciliationLeaseOwner: null, reconciliationLeaseToken: null, reconciliationLeaseUntil: null, updatedAt: now}).where(eq(billingAccounts.workspaceId, workspaceId));
 }
