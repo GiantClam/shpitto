@@ -302,6 +302,7 @@
         "internal/evidence/acceptance/M5/m5-current-20261029/record.json",
         "internal/evidence/acceptance/M5/m5-current-20261029/README.md",
         "internal/evidence/acceptance/stripe-test-pack-20261029/RUN.md",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/billing-readback-prepay.sanitized.json",
         "internal/evidence/acceptance/aipc-local-55432-20261029/README.md",
         "internal/evidence/acceptance/M5/m5-sandbox-20261022/record.json",
         "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md",
