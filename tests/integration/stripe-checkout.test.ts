@@ -139,6 +139,7 @@ test('a session is expired when durable binding fails after remote creation', as
   release.resolve();
   await assert.rejects(operation, /conflicting provider session/i);
   assert.equal(expired, 1);
+  assert.equal((await pool.query("select count(*)::int as count from app.audit_events where workspace_id=$1 and command_name='billing.stripe.checkout-expire'", [input.workspaceId])).rows[0].count, 1);
 });
 
 test('Stripe requires explicit server catalog; fixture terms cannot be relabeled as Stripe', async () => {

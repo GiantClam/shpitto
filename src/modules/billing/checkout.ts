@@ -15,6 +15,7 @@ import {inTransaction, type TransactionDatabase} from '../shared/transaction.ts'
 import {requireCurrentOwner, type WorkspaceActor} from '../workspaces/policy.ts';
 import {ensureCurrentCustomer, provisionStripeCustomer} from './customer-history.ts';
 import {getServerEnv} from '../../config/env.ts';
+import {recordOperatorAudit} from '../operations/audit.ts';
 
 const ACTIVE_SUBSCRIPTION_STATUSES = ['incomplete', 'trialing', 'active', 'past_due', 'unpaid', 'paused'] as const;
 const CHECKOUT_ATTEMPT_TTL_MS = 60 * 60 * 1000;
@@ -226,11 +227,28 @@ export async function openCheckout(db: AppDatabase, input: CheckoutCommandInput)
     const result = await finishCheckout(db, input, attempt.id, providerResult, now);
     return {...result, replayed: prepared.replayed};
   } catch (error) {
-    if (provider.expireCheckout && 'sessionId' in providerResult && providerResult.sessionId) {
+    if (provider.provider === 'stripe' && 'sessionId' in providerResult && providerResult.sessionId) {
+      const sessionId = providerResult.sessionId;
+      let expiry: 'succeeded' | 'failed' | 'not_supported' = 'not_supported';
+      if (provider.expireCheckout) {
+        try {
+          await provider.expireCheckout({...providerInput(attempt), sessionId});
+          expiry = 'succeeded';
+        } catch {
+          expiry = 'failed';
+        }
+      }
       try {
-        await provider.expireCheckout({...providerInput(attempt), sessionId: providerResult.sessionId});
+        await inTransaction(db, async (tx) => recordOperatorAudit(tx, {
+          actorUserId: input.actor.userId,
+          workspaceId: input.workspaceId,
+          commandName: 'billing.stripe.checkout-expire',
+          commandKey: `stripe-expire:${attempt.id}:${sessionId}:${expiry}`,
+          payload: {attemptId: attempt.id, sessionId, reason: 'durable-binding-failed', expiry},
+          now,
+        }));
       } catch {
-        // Preserve the durable binding error. The session remains visible for manual reconciliation if expiry also fails.
+        // Preserve the original durable binding error if the best-effort audit cannot be written.
       }
     }
     throw error;
