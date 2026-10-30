@@ -449,7 +449,7 @@ export function createStripeTestEventMapper(client: StripeTestEventClient) {
     const opened = ['needs_response', 'under_review', 'warning_needs_response', 'warning_under_review'].includes(dispute.status);
     // Warning closure, prevention and unknown states prove neither a loss nor a reinstatement.
     if (!opened && dispute.status !== 'lost' && dispute.status !== 'won') return [];
-    const evidence = (state.invoice ? await recurring(state, binding, fence) : await pack(state, binding, fence))[0];
+    const evidence = (state.invoice ? await recurring(state, binding, fence, true) : await pack(state, binding, fence))[0];
     const observation = evidence ?? base(state, binding, fence, false, '');
     const supported = evidence?.stripe?.supported === true && !!state.charge && positive(dispute.amount) &&
       dispute.amount <= state.charge.amount && dispute.currency === state.charge.currency;

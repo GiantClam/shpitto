@@ -7,7 +7,7 @@ import {inTransaction} from '../shared/transaction.ts';
 import {parseBillingCatalogSnapshot, type PaymentAlias, type ReconciliationFence} from './contracts.ts';
 import {findCanonicalOrderId} from './payment-aliases.ts';
 import {reconcilePayment, type ReconcileResult} from './reconcile-payment.ts';
-import {claimReconciliation, consumeReconciliationFence, recordReconciliationHold, resolveReconciliationScope} from './reconciliation-fence.ts';
+import {claimReconciliation, consumeReconciliationFence, recordReconciliationHold, RECONCILIATION_SCOPE_NOT_READY_MESSAGE, resolveReconciliationScope} from './reconciliation-fence.ts';
 import {mirrorSubscription} from './subscriptions.ts';
 
 type Mapper = ReturnType<typeof createStripeTestEventMapper>;
@@ -71,10 +71,20 @@ async function release(db: AppDatabase, fence: ReconciliationFence): Promise<voi
   ));
 }
 
-async function hold(db: AppDatabase, hint: StripeTestEventHint, fence: ReconciliationFence, reason: string): Promise<ReconcileResult> {
+async function hold(db: AppDatabase, hint: StripeTestEventHint, fence: ReconciliationFence, reason: string, binding?: StripeTestEventBinding): Promise<ReconcileResult> {
   await inTransaction(db, async tx => {
     const now = new Date();
     await consumeReconciliationFence(tx, fence.workspaceId, fence, now);
+    const objectKind = hint.objectType === 'checkout.session' ? 'checkout_session' : hint.objectType === 'payment_intent' ? 'payment_intent' : hint.objectType === 'charge' ? 'charge' : hint.objectType === 'invoice' ? 'invoice' : null;
+    const hintAlias: PaymentAlias[] = objectKind ? [{provider: 'stripe', objectKind, externalId: hint.objectId}] : [];
+    const bindingAliases: PaymentAlias[] = binding ? [
+      ...(binding.checkoutSessionId ? [{provider: 'stripe' as const, objectKind: 'checkout_session' as const, externalId: binding.checkoutSessionId}] : []),
+      ...(binding.invoiceId ? [{provider: 'stripe' as const, objectKind: 'invoice' as const, externalId: binding.invoiceId}] : []),
+      ...(binding.paymentIntentId ? [{provider: 'stripe' as const, objectKind: 'payment_intent' as const, externalId: binding.paymentIntentId}] : []),
+      ...(binding.chargeId ? [{provider: 'stripe' as const, objectKind: 'charge' as const, externalId: binding.chargeId}] : []),
+    ] : [];
+    const orderId = await findCanonicalOrderId(tx, [...bindingAliases, ...hintAlias]);
+    if (orderId) await tx.update(billingOrders).set({status: 'held', updatedAt: now}).where(eq(billingOrders.id, orderId));
     await recordReconciliationHold(tx, {workspaceId: fence.workspaceId, provider: 'stripe', externalReference: hint.eventId, reason,
       payload: {eventId: hint.eventId, eventType: hint.eventType, objectId: hint.objectId}, now});
   });
@@ -87,7 +97,7 @@ export async function reconcileStripeTestEvent(db: AppDatabase, input: Readonly<
   const discovery = await mapper.discoverIdentity(hint);
   // Other customers in the same sandbox have no authority over application tenants.
   const mapped = (await db.select({workspaceId: billingCustomerHistory.workspaceId}).from(billingCustomerHistory).where(and(eq(billingCustomerHistory.provider, 'stripe'), eq(billingCustomerHistory.customerId, discovery.customerId))).limit(1))[0];
-  if (!mapped) return [];
+  if (!mapped) throw new DomainError('INFRASTRUCTURE', RECONCILIATION_SCOPE_NOT_READY_MESSAGE);
   const workspaceId = await resolveReconciliationScope(db, discovery);
   let fence = await claimReconciliation(db, {workspaceId, owner: `stripe-event:${hint.eventId}`, leaseMs: 300_000});
   try {
@@ -110,7 +120,7 @@ export async function reconcileStripeTestEvent(db: AppDatabase, input: Readonly<
         observation = await mapper.normalizeSubscription(discovery, binding, fence);
       } catch (error) {
         if (!(error instanceof TypeError)) throw error;
-        return [await hold(db, hint, fence, 'unsupported-stripe-subscription-observation')];
+        return [await hold(db, hint, fence, 'unsupported-stripe-subscription-observation', binding)];
       }
       if (observation) await mirrorSubscription(db, observation);
       return [];
@@ -121,7 +131,7 @@ export async function reconcileStripeTestEvent(db: AppDatabase, input: Readonly<
       observations = await mapper.normalize(discovery, binding, fence);
     } catch (error) {
       if (!(error instanceof TypeError)) throw error;
-      return [await hold(db, hint, fence, 'unverified-stripe-payment-observation')];
+      return [await hold(db, hint, fence, 'unverified-stripe-payment-observation', binding)];
     }
     if (!observations.length) return [];
 

@@ -8,6 +8,7 @@ import {drizzle} from 'drizzle-orm/node-postgres';
 import {migrate} from 'drizzle-orm/node-postgres/migrator';
 
 import {semanticHash} from '../../src/contracts/http.ts';
+import {DomainError} from '../../src/db/contracts.ts';
 import type {AppDatabase} from '../../src/db/client.ts';
 import * as schema from '../../src/db/schema/index.ts';
 import {snapshotBillingProduct} from '../../src/config/plans.ts';
@@ -241,6 +242,36 @@ test('second external subscription produces a recovery hold instead of losing ev
   assert.equal(second.status, 'held');
   assert.equal((await rows('credit_grants', f.workspaceId)).length, 1);
   assert.ok((await rows('billing_reconciliation_cases', f.workspaceId)).length > 0);
+});
+
+test('scope reports a missing provider customer mapping as retryable infrastructure', async () => {
+  const f = await fixture();
+  await assert.rejects(
+    resolveReconciliationScope(db, {...f.input, customerId: 'cus_not_yet_persisted'}),
+    (error: unknown) => error instanceof DomainError && error.code === 'INFRASTRUCTURE' && /scope is not ready|retry/i.test(error.publicMessage),
+  );
+});
+
+test('an unsupported pack dispute is held with an order barrier and recovery case', async () => {
+  const f = await fixture('pack');
+  const pack = {...f.input, externalSubscriptionId: undefined, stripe: {...f.input.stripe!, billingReason: undefined}};
+  assert.equal((await apply(pack)).status, 'paid');
+  const dispute = await apply({...pack, eventId: 'evt_pack_dispute_hold', eventType: 'charge.dispute.created', disputeId: 'dp_pack_hold', amountMinor: '2500', stripe: {...pack.stripe!, supported: false}});
+  assert.equal(dispute.status, 'held');
+  assert.equal((await rows('billing_orders', f.workspaceId))[0]!.status, 'held');
+  assert.equal((await pool.query('select status from app.billing_accounts where workspace_id=$1', [f.workspaceId])).rows[0]!.status, 'hold');
+  assert.ok((await rows('billing_reconciliation_cases', f.workspaceId)).some((row) => row.reason === 'Stripe paid semantics, price, amount, or currency are unverified.'));
+});
+
+test('a full Stripe subscription refund records cash recovery and reverses the monthly grant', async () => {
+  const f = await fixture();
+  assert.equal((await apply(f.input)).status, 'paid');
+  const refunded = await apply({...f.input, eventId: 'evt_subscription_refund_25', eventType: 'charge.refunded', refundId: 're_subscription_25', amountMinor: '2500'});
+  assert.equal(refunded.status, 'recovery');
+  assert.equal((await rows('billing_orders', f.workspaceId))[0]!.status, 'refunded');
+  assert.equal((await rows('billing_cash_events', f.workspaceId))[0]!.amount_minor, '2500');
+  assert.equal((await rows('credit_grants', f.workspaceId)).length, 1);
+  assert.equal(String((await rows('credit_grants', f.workspaceId))[0]!.voided), '1000');
 });
 
 test('scope rejects forged workspace/customer hints and lifecycle requires a live matching fence', async () => {

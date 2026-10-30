@@ -307,98 +307,110 @@ export async function reconcilePayment(db: AppDatabase, input: PaymentObservatio
         stripeResolved = await resolveStripeOrder(tx, input, paymentAliases, stripeWorkspaceId!, now);
       } catch (error) {
         if (!(error instanceof DomainError)) throw error;
+        const orderId = await findCanonicalOrderId(tx, paymentAliases);
+        if (orderId) await tx.update(billingOrders).set({status: 'held', updatedAt: now}).where(eq(billingOrders.id, orderId));
         await recordReconciliationHold(tx, {workspaceId: stripeWorkspaceId!, provider: 'stripe', externalReference: input.eventId, reason: error.publicMessage, payload: input, now});
-        return {eventId: input.eventId, orderId: null, status: 'held', grantId: null, replayed: false};
+        return {eventId: input.eventId, orderId: orderId ?? null, status: 'held', grantId: null, replayed: false};
       }
     }
-    const knownOrderId = await findCanonicalOrderId(tx, paymentAliases);
-    const knownOrder = knownOrderId
-      ? (await tx.select({workspaceId: billingOrders.workspaceId, customerId: billingOrders.customerId}).from(billingOrders).where(eq(billingOrders.id, knownOrderId)).limit(1))[0]
-      : undefined;
-    if (knownOrder && input.workspaceId && input.workspaceId !== knownOrder.workspaceId) throw new DomainError('CONFLICT', 'Payment workspace does not match the canonical order.');
-    if (knownOrder && input.customerId && input.customerId !== knownOrder.customerId) throw new DomainError('CONFLICT', 'Payment customer does not match the canonical order.');
-    const workspaceIdHint = stripeResolved?.workspaceId ?? input.workspaceId ?? knownOrder?.workspaceId;
-    let workspaceId = workspaceIdHint;
-    if (!workspaceId && input.checkoutSessionId) {
-      const attempt = await tx.select({workspaceId: billingCheckoutAttempts.workspaceId}).from(billingCheckoutAttempts).where(eq(billingCheckoutAttempts.stripeSessionId, input.checkoutSessionId)).limit(1);
-      workspaceId = attempt[0]?.workspaceId;
-    }
-    if (!workspaceId) throw new DomainError('CONFLICT', 'Webhook event has no local workspace mapping.');
-    // Preserve workspace -> billing -> credits ordering when the optional
-    // affiliate fact is recorded in this same transaction.
-    const lockedWorkspace = await tx.select({id: workspaces.id}).from(workspaces).where(eq(workspaces.id, workspaceId)).for('update').limit(1);
-    if (!lockedWorkspace[0]) throw new DomainError('NOT_FOUND', 'Workspace not found.');
-    if (input.provider === 'fixture') await lockAccount(tx, workspaceId, now);
-    const resolved = stripeResolved ?? await resolveOrder(tx, input, paymentAliases, now);
-    const workspace = await tx.select({createdBy: workspaces.createdBy}).from(workspaces).where(eq(workspaces.id, resolved.workspaceId)).limit(1);
-    if (!workspace[0]) throw new DomainError('NOT_FOUND', 'Workspace not found.');
-    await attachPaymentAliases(tx, paymentAliases.map((alias) => ({...alias, workspaceId: resolved.workspaceId, orderId: resolved.orderId, createdAt: now})));
+    try {
+      const knownOrderId = await findCanonicalOrderId(tx, paymentAliases);
+      const knownOrder = knownOrderId
+        ? (await tx.select({workspaceId: billingOrders.workspaceId, customerId: billingOrders.customerId}).from(billingOrders).where(eq(billingOrders.id, knownOrderId)).limit(1))[0]
+        : undefined;
+      if (knownOrder && input.workspaceId && input.workspaceId !== knownOrder.workspaceId) throw new DomainError('CONFLICT', 'Payment workspace does not match the canonical order.');
+      if (knownOrder && input.customerId && input.customerId !== knownOrder.customerId) throw new DomainError('CONFLICT', 'Payment customer does not match the canonical order.');
+      const workspaceIdHint = stripeResolved?.workspaceId ?? input.workspaceId ?? knownOrder?.workspaceId;
+      let workspaceId = workspaceIdHint;
+      if (!workspaceId && input.checkoutSessionId) {
+        const attempt = await tx.select({workspaceId: billingCheckoutAttempts.workspaceId}).from(billingCheckoutAttempts).where(eq(billingCheckoutAttempts.stripeSessionId, input.checkoutSessionId)).limit(1);
+        workspaceId = attempt[0]?.workspaceId;
+      }
+      if (!workspaceId) throw new DomainError('CONFLICT', 'Webhook event has no local workspace mapping.');
+      // Preserve workspace -> billing -> credits ordering when the optional
+      // affiliate fact is recorded in this same transaction.
+      const lockedWorkspace = await tx.select({id: workspaces.id}).from(workspaces).where(eq(workspaces.id, workspaceId)).for('update').limit(1);
+      if (!lockedWorkspace[0]) throw new DomainError('NOT_FOUND', 'Workspace not found.');
+      if (input.provider === 'fixture') await lockAccount(tx, workspaceId, now);
+      const resolved = stripeResolved ?? await resolveOrder(tx, input, paymentAliases, now);
+      const workspace = await tx.select({createdBy: workspaces.createdBy}).from(workspaces).where(eq(workspaces.id, resolved.workspaceId)).limit(1);
+      if (!workspace[0]) throw new DomainError('NOT_FOUND', 'Workspace not found.');
+      await attachPaymentAliases(tx, paymentAliases.map((alias) => ({...alias, workspaceId: resolved.workspaceId, orderId: resolved.orderId, createdAt: now})));
 
-    if (RECOVERY_EVENTS.has(input.eventType)) {
-      const eventKind = input.eventType === 'charge.refunded' ? 'refund' : input.eventType === 'charge.dispute.reversed' ? 'dispute_reversed' : input.eventType === 'charge.dispute.lost' ? 'dispute_lost' : 'dispute_opened';
-      const amount = BigInt(parseMoneyMinor(input.amountMinor ?? resolved.catalog.amountMinor));
-      const externalId = eventKind === 'refund' ? input.refundId ?? input.eventId : input.disputeId ?? input.eventId;
-      if (eventKind === 'dispute_reversed' && !(await hasDisputeSource(tx, resolved.workspaceId, resolved.orderId, input))) {
-        await recordReconciliationHold(tx, {workspaceId: resolved.workspaceId, provider: 'stripe', externalReference: input.eventId, reason: 'dispute-reversal-missing-source', payload: input, now});
-        return {eventId: input.eventId, orderId: resolved.orderId, status: 'held' as const, grantId: null, replayed: false};
+      if (RECOVERY_EVENTS.has(input.eventType)) {
+        const eventKind = input.eventType === 'charge.refunded' ? 'refund' : input.eventType === 'charge.dispute.reversed' ? 'dispute_reversed' : input.eventType === 'charge.dispute.lost' ? 'dispute_lost' : 'dispute_opened';
+        const amount = BigInt(parseMoneyMinor(input.amountMinor ?? resolved.catalog.amountMinor));
+        const externalId = eventKind === 'refund' ? input.refundId ?? input.eventId : input.disputeId ?? input.eventId;
+        if (eventKind === 'dispute_reversed' && !(await hasDisputeSource(tx, resolved.workspaceId, resolved.orderId, input))) {
+          await recordReconciliationHold(tx, {workspaceId: resolved.workspaceId, provider: 'stripe', externalReference: input.eventId, reason: 'dispute-reversal-missing-source', payload: input, now});
+          return {eventId: input.eventId, orderId: resolved.orderId, status: 'held' as const, grantId: null, replayed: false};
+        }
+        const recovery = await recordBillingRecoveryInTransaction(tx, {workspaceId: resolved.workspaceId, orderId: resolved.orderId, externalId, relatedExternalId: input.relatedEventId, economicLossId: input.economicLossId, kind: eventKind, amountMinor: amount, currency: input.currency, actorUserId: workspace[0].createdBy, now});
+        if (input.provider === 'stripe' && resolved.catalog.kind === 'subscription' && (!input.periodStart || !input.periodEnd) && !recovery.replayed) {
+          await recordReconciliationHold(tx, {workspaceId: resolved.workspaceId, provider: 'stripe', externalReference: input.eventId, reason: 'stripe-recovery-service-period-unavailable', payload: input, now});
+        }
+        return {eventId: input.eventId, orderId: resolved.orderId, status: recovery.replayed ? 'duplicate' as const : 'recovery' as const, grantId: null, replayed: recovery.replayed};
       }
-      const recovery = await recordBillingRecoveryInTransaction(tx, {workspaceId: resolved.workspaceId, orderId: resolved.orderId, externalId, relatedExternalId: input.relatedEventId, economicLossId: input.economicLossId, kind: eventKind, amountMinor: amount, currency: input.currency, actorUserId: workspace[0].createdBy, now});
-      if (input.provider === 'stripe' && resolved.catalog.kind === 'subscription' && (!input.periodStart || !input.periodEnd) && !recovery.replayed) {
-        await recordReconciliationHold(tx, {workspaceId: resolved.workspaceId, provider: 'stripe', externalReference: input.eventId, reason: 'stripe-recovery-service-period-unavailable', payload: input, now});
-      }
-      return {eventId: input.eventId, orderId: resolved.orderId, status: recovery.replayed ? 'duplicate' as const : 'recovery' as const, grantId: null, replayed: recovery.replayed};
-    }
 
-    if (input.eventType === 'payment.failed') {
-      if (input.provider === 'stripe' && (resolved.order.status === 'held' || resolved.order.status === 'refunded' || resolved.order.refundedMinor > 0n)) return {eventId: input.eventId, orderId: resolved.orderId, status: 'held', grantId: null, replayed: false};
+      if (input.eventType === 'payment.failed') {
+        if (input.provider === 'stripe' && (resolved.order.status === 'held' || resolved.order.status === 'refunded' || resolved.order.refundedMinor > 0n)) return {eventId: input.eventId, orderId: resolved.orderId, status: 'held', grantId: null, replayed: false};
+        if (resolved.order.status === 'paid') {
+          const existingGrant = (await tx.select({id: creditGrants.id}).from(creditGrants).where(and(eq(creditGrants.workspaceId, resolved.workspaceId), eq(creditGrants.businessKey, `billing:${resolved.orderId}:grant`))).limit(1))[0];
+          if (existingGrant) return {eventId: input.eventId, orderId: resolved.orderId, status: 'duplicate' as const, grantId: existingGrant.id, replayed: true};
+        }
+        await tx.update(billingOrders).set({status: 'failed', updatedAt: now}).where(eq(billingOrders.id, resolved.orderId));
+        return {eventId: input.eventId, orderId: resolved.orderId, status: 'failed' as const, grantId: null, replayed: false};
+      }
+      if (!PAID_EVENTS.has(input.eventType)) throw new DomainError('VALIDATION', 'Unsupported payment event.');
       if (resolved.order.status === 'paid') {
         const existingGrant = (await tx.select({id: creditGrants.id}).from(creditGrants).where(and(eq(creditGrants.workspaceId, resolved.workspaceId), eq(creditGrants.businessKey, `billing:${resolved.orderId}:grant`))).limit(1))[0];
-        if (existingGrant) return {eventId: input.eventId, orderId: resolved.orderId, status: 'duplicate' as const, grantId: existingGrant.id, replayed: true};
+        if (!existingGrant) throw new DomainError('CONFLICT', 'A paid order is missing its canonical credit grant.');
+        if (input.provider === 'stripe') await resolveStripePaidCases(tx, resolved.workspaceId, paymentAliases, now);
+        return {eventId: input.eventId, orderId: resolved.orderId, status: 'duplicate' as const, grantId: existingGrant.id, replayed: true};
       }
-      await tx.update(billingOrders).set({status: 'failed', updatedAt: now}).where(eq(billingOrders.id, resolved.orderId));
-      return {eventId: input.eventId, orderId: resolved.orderId, status: 'failed' as const, grantId: null, replayed: false};
-    }
-    if (!PAID_EVENTS.has(input.eventType)) throw new DomainError('VALIDATION', 'Unsupported payment event.');
-    if (resolved.order.status === 'paid') {
-      const existingGrant = (await tx.select({id: creditGrants.id}).from(creditGrants).where(and(eq(creditGrants.workspaceId, resolved.workspaceId), eq(creditGrants.businessKey, `billing:${resolved.orderId}:grant`))).limit(1))[0];
-      if (!existingGrant) throw new DomainError('CONFLICT', 'A paid order is missing its canonical credit grant.');
+      if (resolved.order.status === 'held' || resolved.order.status === 'refunded' ||
+          (input.provider === 'stripe' && await hasStripeRecoveryEvidence(tx, resolved.workspaceId, paymentAliases))) {
+        if (input.provider === 'stripe' && resolved.order.status !== 'held' && resolved.order.status !== 'refunded') await tx.update(billingOrders).set({status: 'held', updatedAt: now}).where(eq(billingOrders.id, resolved.orderId));
+        if (input.provider === 'stripe') await recordReconciliationHold(tx, {workspaceId: resolved.workspaceId, provider: 'stripe', externalReference: input.eventId, reason: 'paid-event-after-recovery-fact', payload: input, now});
+        else await openRecoveryCase(tx, {workspaceId: resolved.workspaceId, externalReference: input.eventId, reason: 'paid-event-after-recovery-fact', payload: input, now});
+        return {eventId: input.eventId, orderId: resolved.orderId, status: 'held' as const, grantId: null, replayed: false};
+      }
+      const paidMinor = BigInt(parseMoneyMinor(input.amountMinor ?? resolved.catalog.amountMinor));
+      const paidAt = input.paidAt ? iso(input.paidAt, 'paidAt')! : now;
+      if (paidAt > now) throw new DomainError('VALIDATION', 'Payment time cannot be in the future.');
+      await tx.update(billingOrders).set({status: 'paid', paidMinor, paidAt, updatedAt: now, grantBusinessKey: resolved.order.grantBusinessKey ?? `billing:${resolved.orderId}:grant`}).where(eq(billingOrders.id, resolved.orderId));
+      await recordAffiliatePaymentInTransaction(tx, {workspaceId: resolved.workspaceId, payment: {paymentReference: resolved.orderId, kind: resolved.catalog.kind, paidAt, amountMinor: paidMinor, currency: resolved.order.currency, historyComplete: false}, now});
+      const grantBusinessKey = resolved.order.grantBusinessKey ?? `billing:${resolved.orderId}:grant`;
+      const grant = await issueGrantInTransaction(tx, {
+        actorUserId: workspace[0].createdBy,
+        workspaceId: resolved.workspaceId,
+        commandName: 'billing.reconcile-payment',
+        commandKey: `billing:${input.eventId}`,
+        businessKey: grantBusinessKey,
+        source: resolved.catalog.kind === 'subscription' ? 'subscription' : 'purchase',
+        amount: BigInt(resolved.catalog.credits),
+        expiresAt: resolved.catalog.creditExpiry === 'service_period_end' ? iso(input.periodEnd, 'periodEnd') : null,
+        payload: {eventId: input.eventId, orderId: resolved.orderId, catalogHash: resolved.catalog.snapshotHash},
+      });
+      if (resolved.attemptId) {
+        await tx.update(billingCheckoutAttempts).set({status: 'paid', resolvedAt: now, resolutionReference: input.eventId, updatedAt: now}).where(and(eq(billingCheckoutAttempts.id, resolved.attemptId), inArray(billingCheckoutAttempts.status, ['creating', 'open', 'unknown'])));
+      }
+      if (resolved.catalog.kind === 'subscription' && input.externalSubscriptionId) {
+        const periodStart = iso(input.periodStart, 'periodStart');
+        const periodEnd = iso(input.periodEnd, 'periodEnd');
+        if (!periodStart || !periodEnd) throw new DomainError('VALIDATION', 'Subscription payment requires a service period.');
+        await tx.insert(billingSubscriptions).values({id: randomUUID(), workspaceId: resolved.workspaceId, provider: input.provider, customerId: resolved.customerId, externalId: input.externalSubscriptionId, catalogSnapshot: resolved.catalog, status: 'active', periodStart, periodEnd, cancelAtPeriodEnd: false, createdAt: now, updatedAt: now}).onConflictDoNothing();
+      }
       if (input.provider === 'stripe') await resolveStripePaidCases(tx, resolved.workspaceId, paymentAliases, now);
-      return {eventId: input.eventId, orderId: resolved.orderId, status: 'duplicate' as const, grantId: existingGrant.id, replayed: true};
+      return {eventId: input.eventId, orderId: resolved.orderId, status: 'paid' as const, grantId: grant.grantId, replayed: grant.replayed};
+    } catch (error) {
+      if (input.provider === 'stripe' && input.eventType === 'charge.dispute.created' && stripeWorkspaceId && error instanceof DomainError) {
+        const orderId = stripeResolved?.orderId ?? await findCanonicalOrderId(tx, paymentAliases);
+        if (orderId) await tx.update(billingOrders).set({status: 'held', updatedAt: now}).where(eq(billingOrders.id, orderId));
+        await recordReconciliationHold(tx, {workspaceId: stripeWorkspaceId, provider: 'stripe', externalReference: input.eventId, reason: error.publicMessage, payload: input, now});
+        return {eventId: input.eventId, orderId: orderId ?? null, status: 'held' as const, grantId: null, replayed: false};
+      }
+      throw error;
     }
-    if (resolved.order.status === 'held' || resolved.order.status === 'refunded' ||
-        (input.provider === 'stripe' && await hasStripeRecoveryEvidence(tx, resolved.workspaceId, paymentAliases))) {
-      if (input.provider === 'stripe' && resolved.order.status !== 'held' && resolved.order.status !== 'refunded') await tx.update(billingOrders).set({status: 'held', updatedAt: now}).where(eq(billingOrders.id, resolved.orderId));
-      if (input.provider === 'stripe') await recordReconciliationHold(tx, {workspaceId: resolved.workspaceId, provider: 'stripe', externalReference: input.eventId, reason: 'paid-event-after-recovery-fact', payload: input, now});
-      else await openRecoveryCase(tx, {workspaceId: resolved.workspaceId, externalReference: input.eventId, reason: 'paid-event-after-recovery-fact', payload: input, now});
-      return {eventId: input.eventId, orderId: resolved.orderId, status: 'held' as const, grantId: null, replayed: false};
-    }
-    const paidMinor = BigInt(parseMoneyMinor(input.amountMinor ?? resolved.catalog.amountMinor));
-    const paidAt = input.paidAt ? iso(input.paidAt, 'paidAt')! : now;
-    if (paidAt > now) throw new DomainError('VALIDATION', 'Payment time cannot be in the future.');
-    await tx.update(billingOrders).set({status: 'paid', paidMinor, paidAt, updatedAt: now, grantBusinessKey: resolved.order.grantBusinessKey ?? `billing:${resolved.orderId}:grant`}).where(eq(billingOrders.id, resolved.orderId));
-    await recordAffiliatePaymentInTransaction(tx, {workspaceId: resolved.workspaceId, payment: {paymentReference: resolved.orderId, kind: resolved.catalog.kind, paidAt, amountMinor: paidMinor, currency: resolved.order.currency, historyComplete: false}, now});
-    const grantBusinessKey = resolved.order.grantBusinessKey ?? `billing:${resolved.orderId}:grant`;
-    const grant = await issueGrantInTransaction(tx, {
-      actorUserId: workspace[0].createdBy,
-      workspaceId: resolved.workspaceId,
-      commandName: 'billing.reconcile-payment',
-      commandKey: `billing:${input.eventId}`,
-      businessKey: grantBusinessKey,
-      source: resolved.catalog.kind === 'subscription' ? 'subscription' : 'purchase',
-      amount: BigInt(resolved.catalog.credits),
-      expiresAt: resolved.catalog.creditExpiry === 'service_period_end' ? iso(input.periodEnd, 'periodEnd') : null,
-      payload: {eventId: input.eventId, orderId: resolved.orderId, catalogHash: resolved.catalog.snapshotHash},
-    });
-    if (resolved.attemptId) {
-      await tx.update(billingCheckoutAttempts).set({status: 'paid', resolvedAt: now, resolutionReference: input.eventId, updatedAt: now}).where(and(eq(billingCheckoutAttempts.id, resolved.attemptId), inArray(billingCheckoutAttempts.status, ['creating', 'open', 'unknown'])));
-    }
-    if (resolved.catalog.kind === 'subscription' && input.externalSubscriptionId) {
-      const periodStart = iso(input.periodStart, 'periodStart');
-      const periodEnd = iso(input.periodEnd, 'periodEnd');
-      if (!periodStart || !periodEnd) throw new DomainError('VALIDATION', 'Subscription payment requires a service period.');
-      await tx.insert(billingSubscriptions).values({id: randomUUID(), workspaceId: resolved.workspaceId, provider: input.provider, customerId: resolved.customerId, externalId: input.externalSubscriptionId, catalogSnapshot: resolved.catalog, status: 'active', periodStart, periodEnd, cancelAtPeriodEnd: false, createdAt: now, updatedAt: now}).onConflictDoNothing();
-    }
-    if (input.provider === 'stripe') await resolveStripePaidCases(tx, resolved.workspaceId, paymentAliases, now);
-    return {eventId: input.eventId, orderId: resolved.orderId, status: 'paid' as const, grantId: grant.grantId, replayed: grant.replayed};
   });
 }

@@ -25,6 +25,8 @@ export type ReconciliationScope = Readonly<{
   }>;
 }>;
 
+export const RECONCILIATION_SCOPE_NOT_READY_MESSAGE = 'Stripe reconciliation scope is not ready; retry this delivery.';
+
 /** Provider mappers call this on trusted object identities, never metadata tenant hints alone. */
 export async function resolveReconciliationScope(db: AppDatabase, input: ReconciliationScope): Promise<string> {
   return inTransaction(db, async (tx) => {
@@ -50,7 +52,7 @@ export async function resolveReconciliationScope(db: AppDatabase, input: Reconci
     }
     if (input.customerId) {
       const customer = (await tx.select().from(billingCustomerHistory).where(and(eq(billingCustomerHistory.provider, input.provider), eq(billingCustomerHistory.customerId, input.customerId))).limit(1))[0];
-      if (!customer) throw new DomainError('CONFLICT', 'Provider customer has no persisted workspace mapping.');
+      if (!customer) throw new DomainError('INFRASTRUCTURE', RECONCILIATION_SCOPE_NOT_READY_MESSAGE);
       bindings.push(customer);
     }
     const binding = bindings[0];
