@@ -7,9 +7,16 @@ import {inTransaction} from '../shared/transaction.ts';
 import type {ReconcileResult} from './reconcile-payment.ts';
 
 type Receipt = Readonly<{eventId: string; eventType: string; objectId: string; payloadHash: string}>;
+type StoredStripeIdentity = Readonly<{id?: unknown; type?: unknown; objectId?: unknown}>;
 const STALE_AFTER_MS = 120_000;
 export const STRIPE_DELIVERY_RETRY_LIMIT = 3;
 type DeliveryContext = Readonly<{attemptNumber: number; retryLimit: number}>;
+
+function sameStripeIdentity(existing: Readonly<{eventType: string; payload: unknown}>, input: Receipt): boolean {
+  if (existing.eventType !== input.eventType || !existing.payload || typeof existing.payload !== 'object' || Array.isArray(existing.payload)) return false;
+  const payload = existing.payload as StoredStripeIdentity;
+  return payload.id === input.eventId && payload.type === input.eventType && payload.objectId === input.objectId;
+}
 
 /** Called only after Stripe signature/test-mode verification. Stores delivery identity, not metadata authority. */
 export async function processStripeTestDelivery(db: AppDatabase, input: Receipt & Readonly<{
@@ -27,7 +34,11 @@ export async function processStripeTestDelivery(db: AppDatabase, input: Receipt 
       status: 'received', receivedAt: now, processedAt: null}).onConflictDoNothing().returning({id: billingWebhookInbox.id});
     if (inserted.length) return {duplicate: false, attemptNumber: 1};
     const existing = (await tx.select().from(billingWebhookInbox).where(identity).for('update').limit(1))[0];
-    if (!existing || existing.payloadHash !== input.payloadHash) throw new DomainError('CONFLICT', 'A Stripe event id was reused with a different payload.');
+    // Stripe may regenerate delivery envelopes on replay (for example when
+    // pending_webhooks changes). The signed event identity is stable, while
+    // the raw envelope hash is not. Keep hard conflict semantics for a true
+    // event-id substitution with a different type or object identity.
+    if (!existing || !sameStripeIdentity(existing, input)) throw new DomainError('CONFLICT', 'A Stripe event id was reused with a different event identity.');
     if (existing.status === 'processed') return {duplicate: true, attemptNumber: 0};
     if (existing.status === 'received' && now.getTime() - existing.receivedAt.getTime() < STALE_AFTER_MS) {
       throw new DomainError('INFRASTRUCTURE', 'This Stripe delivery is still being processed.');

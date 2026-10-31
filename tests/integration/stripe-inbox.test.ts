@@ -48,11 +48,12 @@ test('processed redelivery never executes an economic callback twice', async () 
   assert.equal((await pool.query('select status from app.billing_webhook_inbox where external_event_id=$1', [input.eventId])).rows[0].status, 'processed');
 });
 
-test('failed delivery is retryable, while changed payload cannot reuse event identity', async () => {
+test('failed delivery is retryable, while envelope changes preserve stable Stripe identity', async () => {
   const input = receipt();
   await assert.rejects(processStripeTestDelivery(db, {...input, process: async () => {throw new Error('temporary');}}), /temporary/);
   assert.equal((await processStripeTestDelivery(db, {...input, process: async () => []})).duplicate, false);
-  await assert.rejects(processStripeTestDelivery(db, {...input, payloadHash: 'b'.repeat(64), process: async () => []}), /different payload/);
+  assert.equal((await processStripeTestDelivery(db, {...input, payloadHash: 'b'.repeat(64), process: async () => []})).duplicate, false);
+  await assert.rejects(processStripeTestDelivery(db, {...input, payloadHash: 'c'.repeat(64), objectId: 'cs_test_other', process: async () => []}), /different event identity/);
 });
 
 test('in-flight duplicate requests receive retryable failure until durable processing finishes', async () => {
@@ -72,7 +73,7 @@ test('in-flight duplicate requests receive retryable failure until durable proce
 test('stale processing can resume and the receipt excludes untrusted metadata', async () => {
   const input = receipt();
   const now = new Date();
-  await pool.query("insert into app.billing_webhook_inbox (id,provider,external_event_id,event_type,payload_hash,payload,status,received_at) values ($1,'stripe',$2,$3,$4,'{}','received',$5)", [randomUUID(), input.eventId, input.eventType, input.payloadHash, new Date(now.getTime() - 121000)]);
+  await pool.query("insert into app.billing_webhook_inbox (id,provider,external_event_id,event_type,payload_hash,payload,status,received_at) values ($1,'stripe',$2,$3,$4,$5,'received',$6)", [randomUUID(), input.eventId, input.eventType, input.payloadHash, {id: input.eventId, type: input.eventType, objectId: input.objectId}, new Date(now.getTime() - 121000)]);
   assert.equal((await processStripeTestDelivery(db, {...input, now, process: async () => []})).duplicate, false);
 });
 
