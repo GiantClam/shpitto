@@ -240,8 +240,12 @@ export function createStripeTestEventMapper(client: StripeTestEventClient) {
     if (directIntentId && !intent) intent = testObject(await client.paymentIntents.retrieve(identifier(directIntentId, 'pi_')), directIntentId);
     if (intent && !session) {
       const sessions = await client.checkout.sessions.list({payment_intent: intent.id, limit: 2});
-      if (!sessions.has_more && sessions.data.length === 1) {
-        const id = identifier(sessions.data[0]!.id, 'cs_test_');
+      // Subscription-cycle Checkout Sessions can be returned by Stripe's
+      // payment_intent filter even though their session payment_intent is
+      // null; the cycle's PaymentIntent belongs to the invoice instead.
+      const matchingSessions = sessions.data.filter(value => reference(value.payment_intent) === intent!.id);
+      if (!sessions.has_more && matchingSessions.length === 1) {
+        const id = identifier(matchingSessions[0]!.id, 'cs_test_');
         session = testObject(await client.checkout.sessions.retrieve(id), id);
         requireIdentity(reference(session.payment_intent) === intent.id);
       }

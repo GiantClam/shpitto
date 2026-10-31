@@ -153,6 +153,19 @@ test('early recurring PaymentIntent reverses through invoicePayments when Checko
   assert.equal((await h.mapper.normalize(discovery, binding('subscription'), fence))[0]!.stripe?.supported, true);
 });
 
+test('subscription-cycle PaymentIntent lookup ignores a Checkout Session with a null PaymentIntent', async () => {
+  const h = harness('subscription');
+  h.invoice.billing_reason = 'subscription_cycle';
+  h.client.checkout.sessions.list = async (params) => params.payment_intent
+    ? {data: [{...h.session, payment_intent: null}], has_more: false}
+    : {data: [h.session], has_more: false};
+  const discovery = await h.mapper.discoverIdentity(event('refund.updated', 'refund', 're_Mapper'));
+  const [observation] = await h.mapper.normalize(discovery, {...binding('subscription'), invoiceId: 'in_Mapper'}, fence);
+  assert.equal(observation!.stripe?.supported, true);
+  assert.equal(observation!.invoiceId, 'in_Mapper');
+  assert.equal(observation!.externalSubscriptionId, 'sub_Mapper');
+});
+
 test('pack PaymentIntent aliases its canonical Checkout', async () => {
   const h = harness();
   const discovery = await h.mapper.discoverIdentity(event('payment_intent.succeeded', 'payment_intent', 'pi_Mapper'));

@@ -31,7 +31,6 @@ export async function POST(request: Request) {
     const result = await ingestStripeWebhook(getAuthDatabase(), {rawBody, signatureHeader: request.headers.get('stripe-signature'), secret});
     return safeSuccess(result, result.duplicate ? 200 : 202);
   } catch (error) {
-    console.error('[stripe webhook failure]', error);
     return safeError(error);
   }
 }
