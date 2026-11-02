@@ -205,7 +205,7 @@ Source rollback restores only mapped paths using recorded pre-move hashes, prese
 
 The [acceptance contract](acceptance-gates.md) defines M0–M8 entry conditions, mandatory results, environments, evidence, independent review, failure handling and invalidation. Its [initial register](acceptance-status.json) starts every gate at NOT_STARTED; the [record template](acceptance-record.template.json) is a future evidence carrier, not CI enforcement or an implementation pass. Gate policy/validation commands are implemented under 1.7/2.3 and integrated with final packaging under 9.14/9.15.
 
-M8-RC, M8-BETA and M8-STABLE are separate checkpoints within existing task 9.15. BETA PASS permits an accurate paid-Beta-ready label under scoped commercial authority; 9.15 stays open until STABLE PASS. Stable requires representative observed journeys, recovery/upgrade, monitoring and Beta issue closure on current candidate bytes. Record the observation plan/window at RC, rather than inventing a calendar duration or user-count target. This adds no implementation task or product capability.
+M8-RC, M8-BETA and M8-STABLE are separate evidence checkpoints within existing task 9.15. RC and BETA remain evidence-only and do not become PASS or authorize paid-Beta release during collection. The single M8-STABLE manual decision closes 9.15 when representative observed journeys, recovery/upgrade, monitoring and Beta issue closure are complete on current candidate bytes. Record the observation plan/window at RC, rather than inventing a calendar duration or user-count target. This adds no implementation task or product capability.
 
 ## Open Questions
 

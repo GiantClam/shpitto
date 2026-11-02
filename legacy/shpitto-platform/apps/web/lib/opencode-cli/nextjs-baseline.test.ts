@@ -1,7 +1,21 @@
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { buildPreparedWorkspaceBundle } from "./nextjs-baseline";
 
 describe("nextjs baseline workspace", () => {
+  it("keeps the local preview identity aligned with the template Superadmin", () => {
+    const sourceRoot = fileURLToPath(new URL("../../skills/product-baselines/ai-image-tool-baseline/assets/template/source/", import.meta.url));
+    const authSource = readFileSync(`${sourceRoot}lib/auth.ts`, "utf8");
+    const formSource = readFileSync(`${sourceRoot}components/auth/auth-form.tsx`, "utf8");
+
+    expect(authSource).toContain("const previewAdminEmail = 'preview@shpitto.local';");
+    expect(authSource).toContain("if (enablePreviewCredentials && email.trim().toLowerCase() === previewAdminEmail) return true;");
+    expect(authSource).toContain("session.user.email = String(token.email || previewAdminEmail);");
+    expect(formSource).toContain("useState('preview@shpitto.local')");
+    expect(formSource).toContain("useState('flux-demo')");
+  });
+
   it("creates a multi-route Next.js workspace and static preview bundle", () => {
     const bundle = buildPreparedWorkspaceBundle({
       workspaceRoot: "D:/tmp/shpitto-opencode-job",

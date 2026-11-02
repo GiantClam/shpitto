@@ -8,9 +8,9 @@ Companions: [tasks](tasks.md), [capability traceability](traceability.md), [desi
 
 1. Nine milestone gates reuse tasks 1.8, 2.8, 3.12, 4.12, 5.10, 6.10, 7.14, 8.15 and 9.15. There are still 105 implementation tasks. A task checkbox and its stage acceptance are different records.
 2. Every implemented task must satisfy its existing SC/T evidence; the criteria below aggregate that evidence. Minimum checks in this document do not replace other required scenarios. An early profile cannot pass a later profile or the whole G gate.
-3. The implementation owner submits the evidence; the automated validator records the current candidate result. Independent review and integration decisions are accumulated in the final manual-acceptance queue. A stage becomes `READY_FOR_REVIEW` when all automated evidence passes; only final manual acceptance may promote it to `PASS`. The product owner receives the queue and owns commercial policy/release decisions. Automated readiness does not authorize spending, production changes or publication.
-4. A failed or blocked stage blocks its dependent tasks and release claims. Independent tasks may continue only if their explicit prerequisites are passed and they do not alter a frozen shared contract. M4 and M5 can run in parallel after M3; partial success cannot unlock M6 completion. Early M7 drafting may follow its task dependencies after M1, but M7 final acceptance waits for M6.
-5. A passed stage is scoped to its source, schema, dependency/configuration and policy digests plus evidence environment. Changed relevant bytes/contracts mark affected evidence `STALE`; the reviewer records impact and reruns affected cases and regressions. Cross-cutting auth/ledger/state contracts also reopen dependent stages. Unchanged evidence may be carried forward only with a recorded equivalence argument; a previous commit label alone is insufficient.
+3. The implementation owner submits the evidence; the automated validator records the current candidate result. During evidence collection, M0-M7 and M8-RC/M8-BETA remain evidence-only: no active stage or checkpoint may be promoted to `PASS`. A stage becomes `READY_FOR_REVIEW` when all automated evidence passes. Exactly one manual acceptance decision is recorded at M8-STABLE after the accumulated evidence is complete; only that decision may produce the final `PASS`. Automated readiness does not authorize spending, production changes or publication.
+4. A failed or blocked stage blocks its dependent tasks and release claims. Independent tasks may continue only if their explicit prerequisites are satisfied by current evidence and they do not alter a frozen shared contract. M4 and M5 can run in parallel after M3 evidence is available; partial success cannot unlock M6 completion. Early M7 drafting may follow its task dependencies after M1 evidence, but M7 final acceptance waits for M6 evidence.
+5. Historical `PASS` decisions remain immutable archival records scoped to their original candidate; they do not authorize a current claim. During the current collection cycle, no M0-M7 or M8-RC/M8-BETA record may become `PASS`. Evidence is scoped to its source, schema, dependency/configuration and policy digests plus evidence environment. Changed relevant bytes/contracts mark affected evidence `STALE`; the evidence owner records impact and reruns affected cases and regressions. Cross-cutting auth/ledger/state contracts also reopen dependent stages. Unchanged evidence may be carried forward only with a recorded equivalence argument; a previous commit label alone is insufficient.
 6. Gate checking is a future implementation deliverable under 1.7/2.3 and final packaging 9.14/9.15. The present JSON/Markdown files document the policy; they are not an already installed CI enforcement system.
 
 ### Deferred manual acceptance policy
@@ -18,12 +18,12 @@ Companions: [tasks](tasks.md), [capability traceability](traceability.md), [desi
 Automated verification and manual acceptance are separate states:
 
 - `IN_PROGRESS`, `BLOCKED`, `FAIL` and `STALE` mean automated work still has a missing prerequisite, an unresolved failure or stale candidate bytes. These states continue to block only the dependent automated work.
-- `READY_FOR_REVIEW` means every applicable automated criterion, scenario, command, coverage threshold, digest check and available sandbox/profile check passed on the exact candidate. It does not require `independentReview` or `integrationDecision` fields to be completed.
-- `PASS` is reserved for the final manual-acceptance decision. A final reviewer checks the accumulated stage records together, and a separate integrator records the cross-stage decision once at the final checkpoint.
-- The generated `internal/evidence/final-manual-acceptance-queue.json` is the single queue for deferred independent reviews, integration decisions and still-missing external inputs. A missing manual decision must not prevent unrelated automated checks from running.
+- `READY_FOR_REVIEW` means every applicable automated criterion, scenario, command, coverage threshold, digest check and available sandbox/profile check passed on the exact candidate. It is an evidence state only and does not require or imply a stage-level approval.
+- `PASS` is reserved for the single M8-STABLE manual-acceptance decision. That decision consumes the accumulated records together and is the only human decision that can close the release gate.
+- The generated `internal/evidence/final-manual-acceptance-queue.json` is the single queue for accumulated evidence, unresolved external inputs and one root `manualDecision` at M8-STABLE. Entries explain evidence only; they do not carry separate stage-review or integration actions. A missing manual decision must not prevent unrelated automated checks from running.
 - Deferring manual review does not turn `BLOCKED`, `NOT_RUN` or missing external-provider evidence into `PASS`. Those results remain visible and block only the claims and tasks that depend on the missing profile.
 
-Automated stage work may use a predecessor at `IN_PROGRESS`, `READY_FOR_REVIEW` or `PASS` when the required shared contracts are available and the downstream work does not claim the missing profile. Final stage gates, release and commercial claims still require every applicable predecessor to reach `PASS` through the final manual-acceptance queue.
+Automated stage work may use a predecessor at `IN_PROGRESS`, `READY_FOR_REVIEW` or historical `PASS` when the required shared contracts are available and the downstream work does not claim the missing profile. Final release and commercial claims require the accumulated predecessor evidence and the single M8-STABLE manual decision; no intermediate stage `PASS` is required or permitted during collection.
 
 ## 2. Common pass/fail standards
 
@@ -71,7 +71,7 @@ The listed G IDs are supported by each phase. Complete release closure still req
 
 ### M1 — Reversible archive and reproducible scaffold (task 2.8)
 
-**Entry:** M0 PASS; tasks 2.1–2.7 complete. **Submitter:** foundation/release owner. **Reviewer:** independent release reviewer. **Environment:** disposable restore copy, clean new-root checkout, local containers.
+**Entry:** M0 evidence is complete for the required shared contracts; tasks 2.1–2.7 complete. **Submitter:** foundation/release owner. **Manual decision:** deferred to the single M8-STABLE decision. **Environment:** disposable restore copy, clean new-root checkout, local containers.
 
 **Mandatory criteria**
 
@@ -84,7 +84,7 @@ The listed G IDs are supported by each phase. Complete release closure still req
 
 ### M2 — Identity, tenant isolation and credit invariants (task 3.12)
 
-**Entry:** M1 PASS; tasks 3.1–3.11 complete. **Submitter:** domain owner. **Reviewer:** independent identity/financial correctness reviewer. **Environment:** real local PostgreSQL, controlled clock, domain/API fixtures.
+**Entry:** M1 evidence is complete for the required shared contracts; tasks 3.1–3.11 complete. **Submitter:** domain owner. **Manual decision:** deferred to the single M8-STABLE decision. **Environment:** real local PostgreSQL, controlled clock, domain/API fixtures.
 
 **Mandatory criteria**
 
@@ -98,7 +98,7 @@ The listed G IDs are supported by each phase. Complete release closure still req
 
 ### M3 — Persistent local product and recovery (task 4.12)
 
-**Entry:** M2 PASS; tasks 4.1–4.11 **and 4.13** complete. **Submitter:** product/domain owner. **Reviewer:** independent verifier/product reviewer. **Environment:** clean local setup, PostgreSQL, persistent Mock/worker/storage, browser.
+**Entry:** M2 evidence is complete for the required shared contracts; tasks 4.1–4.11 **and 4.13** complete. **Submitter:** product/domain owner. **Manual decision:** deferred to the single M8-STABLE decision. **Environment:** clean local setup, PostgreSQL, persistent Mock/worker/storage, browser.
 
 **Mandatory criteria**
 
@@ -109,11 +109,11 @@ The listed G IDs are supported by each phase. Complete release closure still req
 5. Input/output MIME/size/path/media and private-download checks reject unsafe/cross-tenant content. If the candidate implements remote provider-output fetching, deterministic SSRF/redirect/DNS fixtures are mandatory; a no-cloud Mock candidate with no remote-fetch path must prove that caller-supplied/provider URLs are rejected and must identify remote-fetch protection as deferred to the provider-integration gate. No public API-key product surface is advertised.
 6. The seeded Mock demo exercises team invitation/member management, fixture billing, operations/admin views and each implemented local route's success/loading/empty/error/denied state. The record identifies local/mock evidence and leaves real provider/payment/production rows pending.
 
-**Evidence:** J1/J3/J4/J7 local walkthrough; T01–T20 relevant integrated cases, T49/T53 local recovery, 4.13 UI cases; SC-GEN/CRD/IAM outcomes and restart/crash assertions. **Gate effect:** automated `READY_FOR_REVIEW` evidence permits M4/M5 in parallel on frozen shared contracts; final manual `PASS` remains queued, and Mock evidence cannot pass G03/G10.
+**Evidence:** J1/J3/J4/J7 local walkthrough; T01–T20 relevant integrated cases, T49/T53 local recovery, 4.13 UI cases; SC-GEN/CRD/IAM outcomes and restart/crash assertions. **Gate effect:** automated `READY_FOR_REVIEW` evidence permits M4/M5 in parallel on frozen shared contracts; M3 remains evidence-only during collection, and Mock evidence cannot pass G03/G10.
 
 ### M4 — Four real generation paths and production recovery (task 5.10)
 
-**Automated entry:** M3 automated evidence is `READY_FOR_REVIEW` or `PASS`; tasks 5.1–5.9 have their available automated prerequisites. **Final acceptance entry:** M3 is `PASS` in the final manual queue. **Submitter:** integration owner. **Reviewer:** deferred to final manual acceptance. **Environment:** actual Replicate and fal accounts, a buyer-owned provider worker or the optional Trigger runtime, and private S3-compatible storage; safe deterministic fault fixtures alongside live success evidence.
+**Automated entry:** M3 automated evidence is `READY_FOR_REVIEW` (or a historical `PASS` carried only as archival context); tasks 5.1–5.9 have their available automated prerequisites. There is no intermediate final-acceptance entry or stage `PASS` during collection. **Submitter:** integration owner. **Manual decision:** deferred to the single M8-STABLE decision. **Environment:** actual Replicate and fal accounts, a buyer-owned provider worker or the optional Trigger runtime, and private S3-compatible storage; safe deterministic fault fixtures alongside live success evidence.
 
 **Mandatory criteria**
 
@@ -126,7 +126,7 @@ The listed G IDs are supported by each phase. Complete release closure still req
 
 ### M5 — Canonical payment and cash recovery (task 6.10)
 
-**Automated entry:** M3 automated evidence is `READY_FOR_REVIEW` or `PASS`; tasks 6.1–6.9 have their available automated prerequisites; fixed test catalog and Stripe test-mode access are available. **Final acceptance entry:** M3 is `PASS` in the final manual queue. **Submitter:** billing owner. **Reviewer:** deferred to final manual acceptance. **Environment:** real local PostgreSQL plus authorized Stripe test mode.
+**Automated entry:** M3 automated evidence is `READY_FOR_REVIEW` (or a historical `PASS` carried only as archival context); tasks 6.1–6.9 have their available automated prerequisites; fixed test catalog and Stripe test-mode access are available. There is no intermediate final-acceptance entry or stage `PASS` during collection. **Submitter:** billing owner. **Manual decision:** deferred to the single M8-STABLE decision. **Environment:** real local PostgreSQL plus authorized Stripe test mode.
 
 **Mandatory criteria**
 
@@ -140,7 +140,7 @@ The listed G IDs are supported by each phase. Complete release closure still req
 
 ### M6 — Operations and optional affiliate program (task 7.14)
 
-**Automated entry:** M4 and M5 shared contracts are available and their records are `IN_PROGRESS`, `READY_FOR_REVIEW` or `PASS`; all available 7.x prerequisites may proceed independently of deferred manual review or missing external rows. **Final acceptance entry:** M4 and M5 are `PASS` in the final manual queue. **Submitter:** operations/integration owners. **Reviewer:** deferred to final manual acceptance. **Environment:** local database/admin, actual supported FirstPromoter account/campaign test path and authorized non-live financial fixtures.
+**Automated entry:** M4 and M5 shared contracts are available and their records are `IN_PROGRESS` or `READY_FOR_REVIEW` (historical `PASS` is archival context only); all available 7.x prerequisites may proceed independently of missing external rows. There is no intermediate final-acceptance entry or stage `PASS` during collection. **Submitter:** operations/integration owners. **Manual decision:** deferred to the single M8-STABLE decision. **Environment:** local database/admin, actual supported FirstPromoter account/campaign test path and authorized non-live financial fixtures.
 
 **Mandatory criteria**
 
@@ -155,7 +155,7 @@ The listed G IDs are supported by each phase. Complete release closure still req
 
 ### M7 — Governed customization and developer Docs (task 8.15)
 
-**Entry:** final M4/M5/M6 interfaces accepted; tasks 8.1–8.14 complete and 8.15 ready for review. Early drafting follows its individual prerequisites. **Submitter:** Skills/Docs/product owner. **Reviewer:** independent contract/UX/docs reviewer. **Environment:** disposable candidate copies, trusted external validator baseline, supported coding-agent discovery and built Docs.
+**Entry:** M4/M5/M6 interfaces have accumulated the required automated evidence; tasks 8.1–8.14 complete and 8.15 ready for review. Early drafting follows its individual prerequisites. **Submitter:** Skills/Docs/product owner. **Manual decision:** deferred to the single M8-STABLE decision. **Environment:** disposable candidate copies, trusted external validator baseline, supported coding-agent discovery and built Docs.
 
 **Mandatory criteria**
 
@@ -169,9 +169,9 @@ The listed G IDs are supported by each phase. Complete release closure still req
 
 ### M8 — Clean delivery, paid Beta and stable release (task 9.15)
 
-**Entry:** all earlier gates PASS; required 9.x predecessors complete; candidate source and shipped files finalized. **Submitter:** release owner. **Reviewer:** independent release/security reviewer; product owner handles commercial/release authorization. **Environment:** the same immutable 9.3 candidate in a clean local installation, selected managed deployment and Docker application deployment.
+**Entry:** all earlier gates have complete current evidence (typically `READY_FOR_REVIEW` or an explicitly documented block); required 9.x predecessors complete; candidate source and shipped files finalized. M8 is the only stage eligible for a final `PASS`. **Submitter:** release owner. **Manual decision:** one product-owner decision at M8-STABLE after the RC/BETA/STABLE evidence is accumulated. **Environment:** the same immutable 9.3 candidate in a clean local installation, selected managed deployment and Docker application deployment.
 
-**M8-RC — Candidate acceptance**
+**M8-RC — Candidate evidence**
 
 1. Author deploy/environment/migration/restore guides before final freeze; regenerate buyer docs at 9.12, then build the allowlisted package/new-history repository at 9.3. Final SHA-256/source/lock/config/contract/validator digests match all release checks. A shipped-file change reopens 9.3 and reruns 9.4 plus affected 9.14 proof.
 2. The package/history/image context includes required code/migrations/Skills/guides/notices and no legacy/vendor business, original Git history, agent/private state, private dependencies or secrets. False-positive scan findings must be resolved with provenance, not ignored wholesale.
@@ -179,11 +179,11 @@ The listed G IDs are supported by each phase. Complete release closure still req
 4. Backups restore and migration/worker compatibility/rollback drill have observed evidence. For the first release, use an explicitly versioned prior schema/customized-source fixture rather than claiming a previous customer release exists. Record measured restore time/data loss against existing RPO 15-minute/RTO four-hour objectives; missed objectives require a reviewed achievable configuration or corrected declared objective before release, never a fabricated pass.
 5. Reconcile all G01–G31/T01–T62 obligations and detailed SC cases with their correct profiles. Final Docs/skills/source version agrees; draft stage evidence cannot substitute for final customer-byte checks.
 
-**M8-BETA — Paid Beta readiness**
+**M8-BETA — Paid Beta evidence**
 
 6. RC acceptance passed; no open P0/P1 or mandatory-condition failure. Selected real provider/account, affiliate program and two deployment paths have required evidence. Source-sales/vendor affiliates remain separate from buyer Stripe/FirstPromoter.
 7. Approved source license/project/seat/redistribution scope, price/credit catalog, commercial refund/support terms, source update/renewal access and account qualification are recorded. Rehearse verified-order → clean per-customer repository/ZIP fulfillment, update expiry and acquired-version continued use through sandbox/local evidence. Publish only under the concrete existing release authority; live payout is not a release test prerequisite.
-8. Record `M8-BETA=PASS` as permission to label the approved candidate paid-Beta-ready. It does not close stable acceptance or imply publication actually occurred. Keep task 9.15 open until M8-STABLE passes; this is a sub-checkpoint within the existing task, not a 106th implementation task.
+8. Record M8-BETA as evidence-complete `READY_FOR_REVIEW`; do not promote it to `PASS` or use it as paid-Beta approval. It does not close stable acceptance or imply publication actually occurred. Keep task 9.15 open until the single M8-STABLE decision; this is a sub-checkpoint within the existing task, not a 106th implementation task.
 
 **M8-STABLE — Stable readiness**
 
@@ -191,7 +191,7 @@ The listed G IDs are supported by each phase. Complete release closure still req
 10. No open P0/P1, no mandatory regression, no unexplained ledger mismatch/duplicate financial effect/tenant exposure, and no untriaged stuck task or missing alert. Correct expected provider failures follow bounded recovery/refund and remain classified rather than being hidden in a success-rate claim. All Beta findings have disposition/owner and required fixes have evidence.
 11. A behavioral change affecting auth, money, generation, provider contract, schema/migration or recovery invalidates affected observation evidence; rerun the impacted journeys/fault cases on the new baseline and restart their observation under a reviewed window. Docs/presentation-only changes require impact review, a new final artifact/digest and affected checks; they do not automatically reset unrelated observation if equivalence is documented. Revalidate current external configuration, source support/upgrade guidance and final artifact immediately before release labeling.
 
-**Gate effect:** M8-STABLE PASS completes 9.15 and permits accurate stable-ready reporting. Deployment/publication are separately recorded actions. All earlier checkpoints, artifact evidence and commercial limitations remain visible; elapsed days or a calendar deadline cannot override a failed requirement.
+**Gate effect:** the single M8-STABLE manual `PASS` completes 9.15 and permits accurate stable-ready reporting. Deployment/publication are separately recorded actions. All earlier checkpoints, artifact evidence and commercial limitations remain visible; elapsed days or a calendar deadline cannot override a failed requirement.
 
 ## 4. Cross-phase evidence ownership
 
@@ -207,26 +207,26 @@ The listed G IDs are supported by each phase. Complete release closure still req
 | G09/G28/G29 Skills | M7 candidate workflows and trusted checks | M8 released Skill sources/validator/artifact still match the accepted proof |
 | G30 Docs | M7 versioned candidate content and sample guide materialization | M8 final deploy/upgrade content regenerated, vendor Docs and buyer guides matched to 9.3 bytes |
 | G19 release labeling | Every phase's truthful records | M8 distinct RC, paid-Beta-ready and stable-ready decisions |
-| SC-REL-13 | 9.14 checks RC evidence integrity and rejects unsupported labels | 9.15 records BETA and STABLE decisions after their respective evidence exists; 9.14 need not observe a future stable run |
+| SC-REL-13 | 9.14 checks RC/BETA evidence integrity and rejects unsupported labels | 9.15 records BETA evidence and the single STABLE decision after the applicable evidence exists; 9.14 need not observe a future stable run |
 
-All G01–G31 must have their applicable complete profiles before paid Beta; the additional stable observation closes the stable level of G19. A G gate may carry profile-specific evidence without a misleading global PASS at an earlier stage.
+All G01–G31 must have their applicable complete profiles before any paid-Beta action is considered; the additional stable observation and one M8-STABLE manual decision close the stable level of G19. A G gate may carry profile-specific evidence without a misleading global PASS at an earlier stage.
 
 ## 5. Records, status and rework
 
-Use `internal/evidence/acceptance/<stage>/<candidate-id>/record.json` and a short report during implementation. These paths are proposed implementation outputs, not evidence produced by this planning turn. Each record uses the [template](acceptance-record.template.json): task dependencies, source/schema/lock/config/validator digests, environment, profile-specific cases, expected/actual assertions, commands/logs, defect register, submitter, deferred review state, unresolved external inputs, recovery location and next allowed tasks. Do not store raw secrets or signed URLs in the report.
+Use `internal/evidence/acceptance/<stage>/<candidate-id>/record.json` and a short report during implementation. These paths are proposed implementation outputs, not evidence produced by this planning turn. Each record uses the [template](acceptance-record.template.json): task dependencies, source/schema/lock/config/validator digests, environment, profile-specific cases, expected/actual assertions, commands/logs, defect register, submitter, deferred review state, unresolved external inputs, recovery location and next allowed tasks. Criterion, scenario and command results may be `PASS` as automated evidence; that result never promotes the containing stage or checkpoint to `PASS` before M8-STABLE. Do not store raw secrets or signed URLs in the report.
 
 | Status | Meaning and transition |
 | --- | --- |
 | NOT_STARTED | No stage implementation evidence yet |
 | IN_PROGRESS | Automated work/evidence collection is underway; only dependent automated work is held |
-| READY_FOR_REVIEW | All automated mandatory cases and evidence pass for the exact candidate; independent review and integration are queued for final manual acceptance |
-| PASS | Final manual acceptance confirms every mandatory condition for this exact profile/candidate and records separate review/integration decisions |
+| READY_FOR_REVIEW | All automated mandatory cases and evidence pass for the exact candidate; the record remains evidence-only and is queued for the single M8-STABLE manual decision |
+| PASS | Reserved for the single M8-STABLE manual acceptance after every mandatory condition is evidenced; M0-M7 and M8-RC/M8-BETA cannot use this status during collection |
 | FAIL | A mandatory case or integrity condition failed; fix and rerun affected plus regression evidence before review |
 | BLOCKED | Required account/budget/authority/environment/evidence is unavailable; identify owner and next action, do not substitute Mock |
 | STALE | Previously accepted evidence no longer matches relevant source/config/schema/policy; impact review and revalidation required |
 
-For M8, record the three sub-checkpoints separately. Main M8 status becomes PASS only after STABLE PASS. An authorized paid Beta can proceed after BETA PASS while M8 remains IN_PROGRESS.
+For M8, record the three sub-checkpoints separately as evidence. RC and BETA remain `READY_FOR_REVIEW` or another evidence status; they do not authorize paid Beta or publication. Main M8 status becomes `PASS` only after the one M8-STABLE manual decision.
 
-The final manual review consumes the generated automated explanation package for each record. That package must include the exact candidate/environment, every applicable criterion and scenario with expected/observed assertions, command results, coverage, defects, external inputs and evidence references. Human reviewers choose `PASS`, `FAIL` or `RETURN_FOR_EVIDENCE` from that package and record the reason; they do not rerun the tests as a substitute for reviewing automated evidence. The final manual review reports: delivered scope; requirement/case coverage; runnable demo; observed evidence; blockers/defects and proposed corrections; rollback point; exact decision and next permitted tasks across the accumulated queue. Technical review must be independent of the affected implementation. A second automated agent may prepare technical findings, but it cannot impersonate a product owner's commercial authorization.
+The single M8-STABLE manual review consumes the generated automated explanation package for the accumulated records. That package must include the exact candidate/environment, every applicable criterion and scenario with expected/observed assertions, command results, coverage, defects, external inputs and evidence references. The product owner chooses `PASS`, `FAIL` or `RETURN_FOR_EVIDENCE` once and records the reason; the decision does not replace automated evidence collection. The final manual review reports: delivered scope; requirement/case coverage; runnable demo; observed evidence; blockers/defects and proposed corrections; rollback point; exact decision and next permitted tasks across the accumulated queue. Independent technical findings may be attached as evidence, but no separate per-stage reviewer or integrator decision is required.
 
 Failure workflow: retain original failing evidence → classify and assign owner → stop dependent work → fix at the owning contract/domain layer → rerun failed case plus affected regressions → refresh digests and downstream impact → independent rereview. No skipping mandatory checks, relabeling a defect to bypass the gate or rolling back unrelated customer work.

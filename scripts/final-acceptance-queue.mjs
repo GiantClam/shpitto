@@ -3,10 +3,12 @@ import path from 'node:path';
 import {pathToFileURL} from 'node:url';
 
 export const FINAL_ACCEPTANCE_QUEUE_REF = 'internal/evidence/final-manual-acceptance-queue.json';
-export const FINAL_MANUAL_ACTIONS = [
-  {id: 'independent-review', label: 'Independent stage review', owner: 'independent reviewer'},
-  {id: 'integration-decision', label: 'Cross-stage integration decision', owner: 'integrator'},
-];
+export const FINAL_MANUAL_DECISION = {
+  id: 'm8-final-manual-acceptance',
+  label: 'M8-STABLE manual acceptance',
+  owner: 'product owner',
+  checkpointId: 'M8-STABLE',
+};
 export const HUMAN_DECISION_OPTIONS = [
   {id: 'PASS', label: 'Pass', meaning: 'Accept the automated evidence for this exact candidate and scope.'},
   {id: 'FAIL', label: 'Fail', meaning: 'Reject the candidate because the evidence or observed behavior is unacceptable.'},
@@ -69,7 +71,7 @@ export function buildAutomatedExplanation(record, automated) {
   const checks = automatedChecks(record);
   return {
     conclusion: automated.status,
-    recommendation: ['READY_FOR_REVIEW', 'PASS'].includes(automated.status) ? 'HUMAN_DECISION_REQUIRED' : 'AUTOMATED_WORK_REQUIRED',
+    recommendation: ['READY_FOR_REVIEW', 'PASS'].includes(automated.status) ? 'M8_MANUAL_DECISION_REQUIRED' : 'AUTOMATED_WORK_REQUIRED',
     blockingReasons: automated.blockingReasons,
     checks: Object.entries(checks).map(([id, passed]) => ({
       id,
@@ -105,14 +107,6 @@ export function buildAutomatedExplanation(record, automated) {
   };
 }
 
-function manualAction(record, action) {
-  const field = action.id === 'independent-review' ? record?.independentReview : record?.integrationDecision;
-  const complete = action.id === 'independent-review'
-    ? field?.decision === 'PASS' && field?.independentFromImplementer === true
-    : field?.decision === 'PASS';
-  return {...action, status: complete ? 'COMPLETE' : 'PENDING', evidenceRefs: Array.isArray(field?.evidenceRefs) ? field.evidenceRefs : []};
-}
-
 export function buildFinalAcceptanceQueue({register, records, generatedAt = new Date().toISOString()}) {
   const entries = [];
   for (const stage of register.stages ?? []) {
@@ -132,9 +126,8 @@ export function buildFinalAcceptanceQueue({register, records, generatedAt = new 
         humanDecisionGuide: {
           decisionOptions: HUMAN_DECISION_OPTIONS,
           noTestRerunRequired: true,
-          instruction: 'Review the automated explanation and evidence references, then record PASS, FAIL or RETURN_FOR_EVIDENCE. Do not repeat the test run as a substitute for reviewing the evidence.',
+          instruction: 'Review this automated explanation as part of the accumulated package. Do not record a stage decision here; the product owner records one PASS, FAIL or RETURN_FOR_EVIDENCE decision at M8-STABLE after the package is complete.',
         },
-        manualActions: FINAL_MANUAL_ACTIONS.map((action) => manualAction(record, action)),
         externalInputs: (Array.isArray(record.externalInputs) ? record.externalInputs : []).map((input) => ({
           input: input.input,
           availability: input.availability,
@@ -144,18 +137,29 @@ export function buildFinalAcceptanceQueue({register, records, generatedAt = new 
       });
     }
   }
+  const automatedReady = entries.filter((entry) => ['READY_FOR_REVIEW', 'PASS'].includes(entry.automatedStatus));
+  const allEvidenceReady = entries.length > 0 && automatedReady.length === entries.length;
+  const manualDecision = {
+    ...FINAL_MANUAL_DECISION,
+    status: allEvidenceReady ? 'PENDING' : 'WAITING_FOR_EVIDENCE',
+    decisionOptions: HUMAN_DECISION_OPTIONS,
+    noTestRerunRequired: true,
+    evidenceRecordRefs: entries.map((entry) => entry.recordRef),
+    instruction: 'Review the accumulated automated explanation package once at M8-STABLE, then record PASS, FAIL or RETURN_FOR_EVIDENCE. Do not repeat the test run as a substitute for reviewing the evidence.',
+  };
   return {
     schemaVersion: '1.0',
     queueKind: 'FINAL_MANUAL_ACCEPTANCE_QUEUE',
     generatedAt,
     checkpointId: 'M8-STABLE',
-    policy: 'Automated evidence produces a complete explanation package and may advance as READY_FOR_REVIEW. Human reviewers choose PASS, FAIL or RETURN_FOR_EVIDENCE from that package; they do not rerun tests as a substitute for reviewing evidence. Independent review and integration decisions are accumulated here and are the only manual stage-acceptance actions required before final PASS.',
+    policy: 'Automated evidence produces a complete explanation package and may advance as READY_FOR_REVIEW. The package accumulates until one product-owner decision at M8-STABLE; the decision is the only manual stage-acceptance action and may be PASS, FAIL or RETURN_FOR_EVIDENCE. No intermediate stage or checkpoint PASS is recorded.',
     entries,
+    manualDecision,
     summary: {
       totalRecords: entries.length,
-      automatedReady: entries.filter((entry) => ['READY_FOR_REVIEW', 'PASS'].includes(entry.automatedStatus)).length,
+      automatedReady: automatedReady.length,
       automatedPending: entries.filter((entry) => entry.automatedStatus === 'IN_PROGRESS').length,
-      manualReviewPending: entries.filter((entry) => entry.manualActions.some((action) => action.status === 'PENDING')).length,
+      manualReviewPending: manualDecision.status === 'PENDING' ? 1 : 0,
       externalInputsPending: entries.filter((entry) => entry.externalInputs.some((input) => !['AVAILABLE', 'PASS', 'COMPLETE'].includes(input.availability))).length,
     },
   };

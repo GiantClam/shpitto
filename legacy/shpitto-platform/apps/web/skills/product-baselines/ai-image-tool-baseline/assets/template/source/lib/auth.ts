@@ -8,13 +8,14 @@ const hasGoogleAuth = Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE
 const isTemplatePreview = process.env.SHPITTO_TEMPLATE_PREVIEW === 'true' || process.env.SHPITTO_TEMPLATE_PREVIEW === '1';
 const isPreviewRuntime = isTemplatePreview && !isProduction;
 const enablePreviewCredentials = !hasGoogleAuth && (isTemplatePreview || (!isProduction && (process.env.ENABLE_DEV_USER === 'true' || process.env.ENABLE_DEV_USER === '1' || typeof process.env.ENABLE_DEV_USER === 'undefined')));
+const previewAdminEmail = 'preview@shpitto.local';
 function configuredAdminEmails(): string[] {
   return String(process.env.CMS_ADMIN_EMAILS || '').split(',').map((item) => item.trim().toLowerCase()).filter(Boolean);
 }
 
 export function isTemplateAdmin(userOrEmail: string | { email?: string }): boolean {
   const email = typeof userOrEmail === 'string' ? userOrEmail : String(userOrEmail.email || '');
-  if (isPreviewRuntime && email.trim().toLowerCase() === 'preview@shpitto.local') return true;
+  if (enablePreviewCredentials && email.trim().toLowerCase() === previewAdminEmail) return true;
   return configuredAdminEmails().includes(email.trim().toLowerCase());
 }
 
@@ -84,7 +85,7 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (session.user) {
         (session.user as TemplateSessionUser).id = String(token.sub || 'dev-user-local');
-        session.user.email = String(token.email || 'demo@fluxkreafree.com');
+        session.user.email = String(token.email || previewAdminEmail);
         session.user.name = String(token.name || 'Creator');
         (session.user as TemplateSessionUser).role = isTemplateAdmin(String(session.user.email)) ? 'admin' : 'user';
       }

@@ -15,7 +15,7 @@ type AuthFormProps = {
 export function AuthForm({ mode, dictionary }: AuthFormProps) {
   const searchParams = useSearchParams();
   const next = searchParams.get('next') || '/app';
-  const [email, setEmail] = useState('demo@fluxkreafree.com');
+  const [email, setEmail] = useState('preview@shpitto.local');
   const [password, setPassword] = useState('flux-demo');
   const [state, setState] = useState<'idle' | 'submitting'>('idle');
 

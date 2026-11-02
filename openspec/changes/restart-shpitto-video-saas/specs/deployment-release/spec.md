@@ -127,7 +127,7 @@ Trace: D07, D15, D17, D20, J4, J9, T12, T48, T49, T50, T53, T60, G07, G15, G17, 
 
 Release status SHALL be based on G01–G31 and the required T01–T62 evidence, including all promised commercial V1 capabilities. Evidence SHALL identify the exact release, environment, case, outcome and sanitized artifact, distinguishing local/mock, service-backed, payment test-mode and live results. Missing, blocked or skipped evidence MUST NOT be labeled passing. Fixed dates MUST NOT override scope or unresolved release-blocking defects; live expenditure/publication requires its own authorized execution step.
 
-The [staged acceptance contract](../../acceptance-gates.md) SHALL govern separate M8-RC, M8-BETA and M8-STABLE records. Paid-Beta readiness SHALL require all applicable promised-scope evidence and approved commercial inputs. Stable readiness SHALL additionally require representative journey/recovery/upgrade and monitoring observations, disposition of Beta findings, current candidate evidence and no unresolved mandatory failure. Task 9.15 and the main M8 gate SHALL remain incomplete after BETA alone and close only after STABLE PASS. No fixed observation duration or customer count is implied.
+The [staged acceptance contract](../../acceptance-gates.md) SHALL govern separate M8-RC, M8-BETA and M8-STABLE evidence records. RC and BETA SHALL remain evidence-only and SHALL NOT be promoted to `PASS` or authorize paid-Beta release during collection. Stable readiness SHALL additionally require representative journey/recovery/upgrade and monitoring observations, disposition of Beta findings, current candidate evidence and no unresolved mandatory failure. Exactly one manual acceptance decision SHALL be recorded at M8-STABLE; task 9.15 and the main M8 gate SHALL remain incomplete until that decision is `PASS`. No fixed observation duration or customer count is implied.
 
 Trace: D03, D19, D30, D31, J1, J2, J3, J4, J5, J6, J7, J8, J9, J10, T01, T21, T25, T30, T47, T48, T53, T55, T58, T62, G03, G19, G30, G31. Tasks: 9.13, 9.14, 9.15.
 
@@ -139,5 +139,5 @@ Trace: D03, D19, D30, D31, J1, J2, J3, J4, J5, J6, J7, J8, J9, J10, T01, T21, T2
 #### Scenario: SC-REL-13 Label readiness accurately
 
 - **WHEN** a reviewer considers a paid Beta or stable candidate
-- **THEN** RC, BETA and STABLE decisions identify their candidate and required evidence separately; BETA alone leaves 9.15 open, while stable includes representative observation, closed blockers and migration/support guidance; review of this plan alone neither starts publication nor claims implementation passes
+- **THEN** RC, BETA and STABLE evidence identify their candidate and required evidence separately; RC/BETA remain evidence-only and leave 9.15 open, while the single M8-STABLE decision additionally requires representative observation, closed blockers and migration/support guidance; review of this plan alone neither starts publication nor claims implementation passes
 

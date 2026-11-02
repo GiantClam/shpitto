@@ -1,9 +1,9 @@
 {
   "schemaVersion": "1.0",
   "queueKind": "FINAL_MANUAL_ACCEPTANCE_QUEUE",
-  "generatedAt": "2026-10-29T17:01:48.161Z",
+  "generatedAt": "2026-11-02T13:34:50.509Z",
   "checkpointId": "M8-STABLE",
-  "policy": "Automated evidence produces a complete explanation package and may advance as READY_FOR_REVIEW. Human reviewers choose PASS, FAIL or RETURN_FOR_EVIDENCE from that package; they do not rerun tests as a substitute for reviewing evidence. Independent review and integration decisions are accumulated here and are the only manual stage-acceptance actions required before final PASS.",
+  "policy": "Automated evidence produces a complete explanation package and may advance as READY_FOR_REVIEW. The package accumulates until one product-owner decision at M8-STABLE; the decision is the only manual stage-acceptance action and may be PASS, FAIL or RETURN_FOR_EVIDENCE. No intermediate stage or checkpoint PASS is recorded.",
   "entries": [
     {
       "stageId": "M0",
@@ -15,7 +15,7 @@
       "blockingReasons": [],
       "automatedExplanation": {
         "conclusion": "PASS",
-        "recommendation": "HUMAN_DECISION_REQUIRED",
+        "recommendation": "M8_MANUAL_DECISION_REQUIRED",
         "blockingReasons": [],
         "checks": [
           {
@@ -577,30 +577,8 @@
           }
         ],
         "noTestRerunRequired": true,
-        "instruction": "Review the automated explanation and evidence references, then record PASS, FAIL or RETURN_FOR_EVIDENCE. Do not repeat the test run as a substitute for reviewing the evidence."
+        "instruction": "Review this automated explanation as part of the accumulated package. Do not record a stage decision here; the product owner records one PASS, FAIL or RETURN_FOR_EVIDENCE decision at M8-STABLE after the package is complete."
       },
-      "manualActions": [
-        {
-          "id": "independent-review",
-          "label": "Independent stage review",
-          "owner": "independent reviewer",
-          "status": "COMPLETE",
-          "evidenceRefs": [
-            "internal/restart/evidence-index.json",
-            "internal/evidence/acceptance/M0/working-tree-20260927/record.json",
-            "internal/spikes/selected-stack/admin/admin-postgres-chain-evidence.json",
-            "internal/spikes/selected-stack/domain/migration-manifest.json",
-            "internal/restart/m0-evidence.md"
-          ]
-        },
-        {
-          "id": "integration-decision",
-          "label": "Cross-stage integration decision",
-          "owner": "integrator",
-          "status": "COMPLETE",
-          "evidenceRefs": []
-        }
-      ],
       "externalInputs": [
         {}
       ]
@@ -615,7 +593,7 @@
       "blockingReasons": [],
       "automatedExplanation": {
         "conclusion": "PASS",
-        "recommendation": "HUMAN_DECISION_REQUIRED",
+        "recommendation": "M8_MANUAL_DECISION_REQUIRED",
         "blockingReasons": [],
         "checks": [
           {
@@ -1076,31 +1054,8 @@
           }
         ],
         "noTestRerunRequired": true,
-        "instruction": "Review the automated explanation and evidence references, then record PASS, FAIL or RETURN_FOR_EVIDENCE. Do not repeat the test run as a substitute for reviewing the evidence."
+        "instruction": "Review this automated explanation as part of the accumulated package. Do not record a stage decision here; the product owner records one PASS, FAIL or RETURN_FOR_EVIDENCE decision at M8-STABLE after the package is complete."
       },
-      "manualActions": [
-        {
-          "id": "independent-review",
-          "label": "Independent stage review",
-          "owner": "independent reviewer",
-          "status": "COMPLETE",
-          "evidenceRefs": [
-            "internal/restart/m1-evidence.md",
-            "internal/restart/pre-move-manifest.json",
-            "internal/restart/post-move-manifest.json",
-            "internal/restart/relocation-journal.json",
-            "internal/restart/restore.md",
-            "internal/evidence/acceptance/M1/working-tree-20260928-m1/record.json"
-          ]
-        },
-        {
-          "id": "integration-decision",
-          "label": "Cross-stage integration decision",
-          "owner": "integrator",
-          "status": "COMPLETE",
-          "evidenceRefs": []
-        }
-      ],
       "externalInputs": [
         {
           "input": "Better Auth production flows, workspace and credit schema",
@@ -1126,7 +1081,7 @@
       "blockingReasons": [],
       "automatedExplanation": {
         "conclusion": "PASS",
-        "recommendation": "HUMAN_DECISION_REQUIRED",
+        "recommendation": "M8_MANUAL_DECISION_REQUIRED",
         "blockingReasons": [],
         "checks": [
           {
@@ -1725,28 +1680,8 @@
           }
         ],
         "noTestRerunRequired": true,
-        "instruction": "Review the automated explanation and evidence references, then record PASS, FAIL or RETURN_FOR_EVIDENCE. Do not repeat the test run as a substitute for reviewing the evidence."
+        "instruction": "Review this automated explanation as part of the accumulated package. Do not record a stage decision here; the product owner records one PASS, FAIL or RETURN_FOR_EVIDENCE decision at M8-STABLE after the package is complete."
       },
-      "manualActions": [
-        {
-          "id": "independent-review",
-          "label": "Independent stage review",
-          "owner": "independent reviewer",
-          "status": "COMPLETE",
-          "evidenceRefs": [
-            "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/independent-review.md",
-            "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/independent-review.json",
-            "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/independent-verification/commands.json"
-          ]
-        },
-        {
-          "id": "integration-decision",
-          "label": "Cross-stage integration decision",
-          "owner": "integrator",
-          "status": "COMPLETE",
-          "evidenceRefs": []
-        }
-      ],
       "externalInputs": []
     },
     {
@@ -1759,7 +1694,7 @@
       "blockingReasons": [],
       "automatedExplanation": {
         "conclusion": "PASS",
-        "recommendation": "HUMAN_DECISION_REQUIRED",
+        "recommendation": "M8_MANUAL_DECISION_REQUIRED",
         "blockingReasons": [],
         "checks": [
           {
@@ -4361,31 +4296,8 @@
           }
         ],
         "noTestRerunRequired": true,
-        "instruction": "Review the automated explanation and evidence references, then record PASS, FAIL or RETURN_FOR_EVIDENCE. Do not repeat the test run as a substitute for reviewing the evidence."
+        "instruction": "Review this automated explanation as part of the accumulated package. Do not record a stage decision here; the product owner records one PASS, FAIL or RETURN_FOR_EVIDENCE decision at M8-STABLE after the package is complete."
       },
-      "manualActions": [
-        {
-          "id": "independent-review",
-          "label": "Independent stage review",
-          "owner": "independent reviewer",
-          "status": "COMPLETE",
-          "evidenceRefs": [
-            "internal/evidence/M3/final-stage-review-20261001.json",
-            "internal/evidence/M3/final-stage-review-20261001.md",
-            "internal/evidence/M3/final-independent-race-repetitions-20261001/final-summary.json",
-            "internal/evidence/M3/m2-prerequisite-impact-20261001.md"
-          ]
-        },
-        {
-          "id": "integration-decision",
-          "label": "Cross-stage integration decision",
-          "owner": "integrator",
-          "status": "COMPLETE",
-          "evidenceRefs": [
-            "internal/evidence/acceptance/M3/working-tree-20261001-current/final-integration/decision.json"
-          ]
-        }
-      ],
       "externalInputs": [
         {
           "input": "Production email delivery",
@@ -4423,7 +4335,7 @@
       "blockingReasons": [],
       "automatedExplanation": {
         "conclusion": "READY_FOR_REVIEW",
-        "recommendation": "HUMAN_DECISION_REQUIRED",
+        "recommendation": "M8_MANUAL_DECISION_REQUIRED",
         "blockingReasons": [],
         "checks": [
           {
@@ -7393,24 +7305,8 @@
           }
         ],
         "noTestRerunRequired": true,
-        "instruction": "Review the automated explanation and evidence references, then record PASS, FAIL or RETURN_FOR_EVIDENCE. Do not repeat the test run as a substitute for reviewing the evidence."
+        "instruction": "Review this automated explanation as part of the accumulated package. Do not record a stage decision here; the product owner records one PASS, FAIL or RETURN_FOR_EVIDENCE decision at M8-STABLE after the package is complete."
       },
-      "manualActions": [
-        {
-          "id": "independent-review",
-          "label": "Independent stage review",
-          "owner": "independent reviewer",
-          "status": "PENDING",
-          "evidenceRefs": []
-        },
-        {
-          "id": "integration-decision",
-          "label": "Cross-stage integration decision",
-          "owner": "integrator",
-          "status": "PENDING",
-          "evidenceRefs": []
-        }
-      ],
       "externalInputs": [
         {
           "input": "Production email delivery",
@@ -7496,11 +7392,11 @@
           "capturedAt": "2026-10-29T16:57:11.549Z",
           "sourceCommit": "ed1071a732f1066afd4fdacb8a41fa33e75eae43",
           "dirtyPatchSha256": null,
-          "sourceTreeSha256": "04c76ff70237d162a3154360fe92cc7273c266b9155dbc81c0037910966117bf",
+          "sourceTreeSha256": "7a309e79d4e2447e7d5e0e40e3317551e6a130c310a301eb74a359f4c3ff5b27",
           "schemaSha256": "db21b40ab33bcbac245b616474d5603aa5ee074ba82a0e41b80c93861f2d43c4",
           "configurationSha256": "9f7eae51ae4819c717c3243b2b869156de5149484daa70ad259dba57b1c47af1",
-          "contractSha256": "64a37e1dc089372f0177d144ea8f2f2489c4a0ba3e75abe5bd6adc215f14514b",
-          "validatorSha256": "8ddcc13f1a33b4c31407f297f5944b4d25528b3f19aec342e12bca0ece42639a",
+          "contractSha256": "22dd3c65af54b9276d6796a6d1096d035eb11b088a94610befa23ff7543cdc58",
+          "validatorSha256": "9e68399396467acb1c333a205755891bf29fa46a313921b3fc627e93601f6d94",
           "lockfileSha256": "a75db59723c866636d370d21e20eec1b86d5281810749331504ae42d3f043bee",
           "digestAlgorithm": "SHA-256 of sorted relative-path\\0byte-size\\0file-digest entries joined with LF; lockfile is raw byte SHA-256",
           "digestInputs": {
@@ -8689,24 +8585,8 @@
           }
         ],
         "noTestRerunRequired": true,
-        "instruction": "Review the automated explanation and evidence references, then record PASS, FAIL or RETURN_FOR_EVIDENCE. Do not repeat the test run as a substitute for reviewing the evidence."
+        "instruction": "Review this automated explanation as part of the accumulated package. Do not record a stage decision here; the product owner records one PASS, FAIL or RETURN_FOR_EVIDENCE decision at M8-STABLE after the package is complete."
       },
-      "manualActions": [
-        {
-          "id": "independent-review",
-          "label": "Independent stage review",
-          "owner": "independent reviewer",
-          "status": "PENDING",
-          "evidenceRefs": []
-        },
-        {
-          "id": "integration-decision",
-          "label": "Cross-stage integration decision",
-          "owner": "integrator",
-          "status": "PENDING",
-          "evidenceRefs": []
-        }
-      ],
       "externalInputs": []
     },
     {
@@ -9876,24 +9756,8 @@
           }
         ],
         "noTestRerunRequired": true,
-        "instruction": "Review the automated explanation and evidence references, then record PASS, FAIL or RETURN_FOR_EVIDENCE. Do not repeat the test run as a substitute for reviewing the evidence."
+        "instruction": "Review this automated explanation as part of the accumulated package. Do not record a stage decision here; the product owner records one PASS, FAIL or RETURN_FOR_EVIDENCE decision at M8-STABLE after the package is complete."
       },
-      "manualActions": [
-        {
-          "id": "independent-review",
-          "label": "Independent stage review",
-          "owner": "independent reviewer",
-          "status": "PENDING",
-          "evidenceRefs": []
-        },
-        {
-          "id": "integration-decision",
-          "label": "Cross-stage integration decision",
-          "owner": "integrator",
-          "status": "PENDING",
-          "evidenceRefs": []
-        }
-      ],
       "externalInputs": []
     },
     {
@@ -9906,7 +9770,7 @@
       "blockingReasons": [],
       "automatedExplanation": {
         "conclusion": "PASS",
-        "recommendation": "HUMAN_DECISION_REQUIRED",
+        "recommendation": "M8_MANUAL_DECISION_REQUIRED",
         "blockingReasons": [],
         "checks": [
           {
@@ -11728,28 +11592,8 @@
           }
         ],
         "noTestRerunRequired": true,
-        "instruction": "Review the automated explanation and evidence references, then record PASS, FAIL or RETURN_FOR_EVIDENCE. Do not repeat the test run as a substitute for reviewing the evidence."
+        "instruction": "Review this automated explanation as part of the accumulated package. Do not record a stage decision here; the product owner records one PASS, FAIL or RETURN_FOR_EVIDENCE decision at M8-STABLE after the package is complete."
       },
-      "manualActions": [
-        {
-          "id": "independent-review",
-          "label": "Independent stage review",
-          "owner": "independent reviewer",
-          "status": "COMPLETE",
-          "evidenceRefs": [
-            "internal/evidence/acceptance/M4/m4-self-hosted-20261017/independent-review.json"
-          ]
-        },
-        {
-          "id": "integration-decision",
-          "label": "Cross-stage integration decision",
-          "owner": "integrator",
-          "status": "COMPLETE",
-          "evidenceRefs": [
-            "internal/evidence/acceptance/M4/m4-self-hosted-20261017/integrator.json"
-          ]
-        }
-      ],
       "externalInputs": [
         {
           "availability": "not required for selected self-hosted baseline",
@@ -11821,11 +11665,11 @@
           "capturedAt": "2026-10-29T16:57:11.549Z",
           "sourceCommit": "ed1071a732f1066afd4fdacb8a41fa33e75eae43",
           "dirtyPatchSha256": null,
-          "sourceTreeSha256": "04c76ff70237d162a3154360fe92cc7273c266b9155dbc81c0037910966117bf",
+          "sourceTreeSha256": "7a309e79d4e2447e7d5e0e40e3317551e6a130c310a301eb74a359f4c3ff5b27",
           "schemaSha256": "db21b40ab33bcbac245b616474d5603aa5ee074ba82a0e41b80c93861f2d43c4",
           "configurationSha256": "9f7eae51ae4819c717c3243b2b869156de5149484daa70ad259dba57b1c47af1",
-          "contractSha256": "64a37e1dc089372f0177d144ea8f2f2489c4a0ba3e75abe5bd6adc215f14514b",
-          "validatorSha256": "8ddcc13f1a33b4c31407f297f5944b4d25528b3f19aec342e12bca0ece42639a",
+          "contractSha256": "22dd3c65af54b9276d6796a6d1096d035eb11b088a94610befa23ff7543cdc58",
+          "validatorSha256": "9e68399396467acb1c333a205755891bf29fa46a313921b3fc627e93601f6d94",
           "lockfileSha256": "a75db59723c866636d370d21e20eec1b86d5281810749331504ae42d3f043bee",
           "digestAlgorithm": "SHA-256 of sorted relative-path\\0byte-size\\0file-digest entries joined with LF; lockfile is raw byte SHA-256",
           "digestInputs": {
@@ -13295,24 +13139,8 @@
           }
         ],
         "noTestRerunRequired": true,
-        "instruction": "Review the automated explanation and evidence references, then record PASS, FAIL or RETURN_FOR_EVIDENCE. Do not repeat the test run as a substitute for reviewing the evidence."
+        "instruction": "Review this automated explanation as part of the accumulated package. Do not record a stage decision here; the product owner records one PASS, FAIL or RETURN_FOR_EVIDENCE decision at M8-STABLE after the package is complete."
       },
-      "manualActions": [
-        {
-          "id": "independent-review",
-          "label": "Independent stage review",
-          "owner": "independent reviewer",
-          "status": "PENDING",
-          "evidenceRefs": []
-        },
-        {
-          "id": "integration-decision",
-          "label": "Cross-stage integration decision",
-          "owner": "integrator",
-          "status": "PENDING",
-          "evidenceRefs": []
-        }
-      ],
       "externalInputs": [
         {
           "availability": "PARTIAL",
@@ -14522,34 +14350,8 @@
           }
         ],
         "noTestRerunRequired": true,
-        "instruction": "Review the automated explanation and evidence references, then record PASS, FAIL or RETURN_FOR_EVIDENCE. Do not repeat the test run as a substitute for reviewing the evidence."
+        "instruction": "Review this automated explanation as part of the accumulated package. Do not record a stage decision here; the product owner records one PASS, FAIL or RETURN_FOR_EVIDENCE decision at M8-STABLE after the package is complete."
       },
-      "manualActions": [
-        {
-          "id": "independent-review",
-          "label": "Independent stage review",
-          "owner": "independent reviewer",
-          "status": "PENDING",
-          "evidenceRefs": [
-            "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md",
-            "internal/evidence/acceptance/M5/m5-sandbox-20261022/owner-billing-ui-observation.md",
-            "internal/evidence/acceptance/M5/m5-sandbox-20261022/browser-billing-20261022.json",
-            "internal/evidence/acceptance/M5/m5-sandbox-20261022/owner-billing-desktop.png",
-            "internal/evidence/acceptance/M5/m5-sandbox-20261022/owner-billing-mobile.png",
-            "internal/evidence/acceptance/M5/m5-sandbox-20261022/member-denied-desktop.png",
-            "internal/evidence/acceptance/M5/m5-sandbox-20261022/member-denial-api.log"
-          ]
-        },
-        {
-          "id": "integration-decision",
-          "label": "Cross-stage integration decision",
-          "owner": "integrator",
-          "status": "PENDING",
-          "evidenceRefs": [
-            "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md"
-          ]
-        }
-      ],
       "externalInputs": [
         {
           "availability": "PARTIAL",
@@ -15546,28 +15348,8 @@
           }
         ],
         "noTestRerunRequired": true,
-        "instruction": "Review the automated explanation and evidence references, then record PASS, FAIL or RETURN_FOR_EVIDENCE. Do not repeat the test run as a substitute for reviewing the evidence."
+        "instruction": "Review this automated explanation as part of the accumulated package. Do not record a stage decision here; the product owner records one PASS, FAIL or RETURN_FOR_EVIDENCE decision at M8-STABLE after the package is complete."
       },
-      "manualActions": [
-        {
-          "id": "independent-review",
-          "label": "Independent stage review",
-          "owner": "independent reviewer",
-          "status": "PENDING",
-          "evidenceRefs": [
-            "internal/evidence/M5/m5-local-fixtures-20261017/README.md"
-          ]
-        },
-        {
-          "id": "integration-decision",
-          "label": "Cross-stage integration decision",
-          "owner": "integrator",
-          "status": "PENDING",
-          "evidenceRefs": [
-            "internal/evidence/M5/m5-local-fixtures-20261017/README.md"
-          ]
-        }
-      ],
       "externalInputs": [
         {
           "availability": "DEFERRED_BY_USER",
@@ -15639,11 +15421,11 @@
           "capturedAt": "2026-10-29T16:57:11.549Z",
           "sourceCommit": "ed1071a732f1066afd4fdacb8a41fa33e75eae43",
           "dirtyPatchSha256": null,
-          "sourceTreeSha256": "04c76ff70237d162a3154360fe92cc7273c266b9155dbc81c0037910966117bf",
+          "sourceTreeSha256": "7a309e79d4e2447e7d5e0e40e3317551e6a130c310a301eb74a359f4c3ff5b27",
           "schemaSha256": "db21b40ab33bcbac245b616474d5603aa5ee074ba82a0e41b80c93861f2d43c4",
           "configurationSha256": "9f7eae51ae4819c717c3243b2b869156de5149484daa70ad259dba57b1c47af1",
-          "contractSha256": "64a37e1dc089372f0177d144ea8f2f2489c4a0ba3e75abe5bd6adc215f14514b",
-          "validatorSha256": "8ddcc13f1a33b4c31407f297f5944b4d25528b3f19aec342e12bca0ece42639a",
+          "contractSha256": "22dd3c65af54b9276d6796a6d1096d035eb11b088a94610befa23ff7543cdc58",
+          "validatorSha256": "9e68399396467acb1c333a205755891bf29fa46a313921b3fc627e93601f6d94",
           "lockfileSha256": "a75db59723c866636d370d21e20eec1b86d5281810749331504ae42d3f043bee",
           "digestAlgorithm": "SHA-256 of sorted relative-path\\0byte-size\\0file-digest entries joined with LF; lockfile is raw byte SHA-256",
           "digestInputs": {
@@ -16949,24 +16731,8 @@
           }
         ],
         "noTestRerunRequired": true,
-        "instruction": "Review the automated explanation and evidence references, then record PASS, FAIL or RETURN_FOR_EVIDENCE. Do not repeat the test run as a substitute for reviewing the evidence."
+        "instruction": "Review this automated explanation as part of the accumulated package. Do not record a stage decision here; the product owner records one PASS, FAIL or RETURN_FOR_EVIDENCE decision at M8-STABLE after the package is complete."
       },
-      "manualActions": [
-        {
-          "id": "independent-review",
-          "label": "Independent stage review",
-          "owner": "independent reviewer",
-          "status": "PENDING",
-          "evidenceRefs": []
-        },
-        {
-          "id": "integration-decision",
-          "label": "Cross-stage integration decision",
-          "owner": "integrator",
-          "status": "PENDING",
-          "evidenceRefs": []
-        }
-      ],
       "externalInputs": [
         {
           "availability": "DEFERRED_BY_USER",
@@ -18273,24 +18039,8 @@
           }
         ],
         "noTestRerunRequired": true,
-        "instruction": "Review the automated explanation and evidence references, then record PASS, FAIL or RETURN_FOR_EVIDENCE. Do not repeat the test run as a substitute for reviewing the evidence."
+        "instruction": "Review this automated explanation as part of the accumulated package. Do not record a stage decision here; the product owner records one PASS, FAIL or RETURN_FOR_EVIDENCE decision at M8-STABLE after the package is complete."
       },
-      "manualActions": [
-        {
-          "id": "independent-review",
-          "label": "Independent stage review",
-          "owner": "independent reviewer",
-          "status": "PENDING",
-          "evidenceRefs": []
-        },
-        {
-          "id": "integration-decision",
-          "label": "Cross-stage integration decision",
-          "owner": "integrator",
-          "status": "PENDING",
-          "evidenceRefs": []
-        }
-      ],
       "externalInputs": [
         {
           "availability": "DEFERRED_BY_USER",
@@ -18305,11 +18055,52 @@
       ]
     }
   ],
+  "manualDecision": {
+    "id": "m8-final-manual-acceptance",
+    "label": "M8-STABLE manual acceptance",
+    "owner": "product owner",
+    "checkpointId": "M8-STABLE",
+    "status": "WAITING_FOR_EVIDENCE",
+    "decisionOptions": [
+      {
+        "id": "PASS",
+        "label": "Pass",
+        "meaning": "Accept the automated evidence for this exact candidate and scope."
+      },
+      {
+        "id": "FAIL",
+        "label": "Fail",
+        "meaning": "Reject the candidate because the evidence or observed behavior is unacceptable."
+      },
+      {
+        "id": "RETURN_FOR_EVIDENCE",
+        "label": "Return for evidence",
+        "meaning": "Request a targeted evidence correction or rerun without accepting the stage."
+      }
+    ],
+    "noTestRerunRequired": true,
+    "evidenceRecordRefs": [
+      "internal/evidence/acceptance/M0/working-tree-20260927/record.json",
+      "internal/evidence/acceptance/M1/working-tree-20260928-m1/record.json",
+      "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/record.json",
+      "internal/evidence/acceptance/M3/working-tree-20261001-current/record.json",
+      "internal/evidence/acceptance/M3/working-tree-20261022-current-r5/record.json",
+      "internal/evidence/acceptance/M4/m4-current-20261029/record.json",
+      "internal/evidence/acceptance/M4/m4-current-20261022/record.json",
+      "internal/evidence/acceptance/M4/m4-self-hosted-20261017/record.json",
+      "internal/evidence/acceptance/M5/m5-current-20261029/record.json",
+      "internal/evidence/acceptance/M5/m5-sandbox-20261022/record.json",
+      "internal/evidence/acceptance/M5/m5-local-fixtures-20261017/record.json",
+      "internal/evidence/acceptance/M6/m6-current-20261029/record.json",
+      "internal/evidence/acceptance/M6/m6-current-20261022/record.json"
+    ],
+    "instruction": "Review the accumulated automated explanation package once at M8-STABLE, then record PASS, FAIL or RETURN_FOR_EVIDENCE. Do not repeat the test run as a substitute for reviewing the evidence."
+  },
   "summary": {
     "totalRecords": 13,
     "automatedReady": 6,
     "automatedPending": 7,
-    "manualReviewPending": 8,
+    "manualReviewPending": 0,
     "externalInputsPending": 10
   }
 }
