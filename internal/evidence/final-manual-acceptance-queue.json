@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.0",
   "queueKind": "FINAL_MANUAL_ACCEPTANCE_QUEUE",
-  "generatedAt": "2026-11-02T06:04:10.689Z",
+  "generatedAt": "2026-11-02T13:05:30.215Z",
   "checkpointId": "M8-STABLE",
   "policy": "Automated evidence produces a complete explanation package and may advance as READY_FOR_REVIEW. The package accumulates until one product-owner decision at M8-STABLE; the decision is the only manual stage-acceptance action and may be PASS, FAIL or RETURN_FOR_EVIDENCE. No intermediate stage or checkpoint PASS is recorded.",
   "entries": [
@@ -7389,14 +7389,14 @@
           }
         ],
         "candidate": {
-          "capturedAt": "2026-10-29T07:22:36.789Z",
-          "sourceCommit": "f59f1f094dab084374331de9ad2b7a6fb7ed081e",
+          "capturedAt": "2026-10-29T16:57:11.549Z",
+          "sourceCommit": "ed1071a732f1066afd4fdacb8a41fa33e75eae43",
           "dirtyPatchSha256": null,
-          "sourceTreeSha256": "5b1754f8537307bcf2a3905bc7c24591a53184d9782e4beca503a191b094d39c",
-          "schemaSha256": "db21b40ab33bcbac245b616474d5603aa5ee074ba82a0e41b80c93861f2d43c4",
-          "configurationSha256": "ce96987b2cd7fb4821f36de2e05ba80455a37b566d77ca343f9320d55e56bb59",
-          "contractSha256": "6acfb80fc1a8d6b4dc0f699f1c3d5280a0b44905c1eff6a0b199c19adad601ac",
-          "validatorSha256": "ca4a22e778de0e93418f020fa7e5b93067afb7d6d77597e4a1b4d11971eda4ae",
+          "sourceTreeSha256": "b6f385c76e2e9aa11d6143a91e28ffff8c5f89e4f688f565d11d8c6a593a5581",
+          "schemaSha256": "157cf1aaf3163e450262a0016240622edc8be62277f8907fcf327cf3893d01f2",
+          "configurationSha256": "9b04ae4cacfac877b260552a2556e092015fa16f875b419cfa369887a2627c9f",
+          "contractSha256": "8c0a023d32c00ab569e0798e655ff63866fdf63d4fcd425d1afe65c5fb0746a8",
+          "validatorSha256": "c24a4899a1fbfc570e271aeb473993c00240b690720c1773dce5f36a6ae0f7b0",
           "lockfileSha256": "a75db59723c866636d370d21e20eec1b86d5281810749331504ae42d3f043bee",
           "digestAlgorithm": "SHA-256 of sorted relative-path\\0byte-size\\0file-digest entries joined with LF; lockfile is raw byte SHA-256",
           "digestInputs": {
@@ -11662,14 +11662,14 @@
           }
         ],
         "candidate": {
-          "capturedAt": "2026-10-29T07:22:36.789Z",
-          "sourceCommit": "f59f1f094dab084374331de9ad2b7a6fb7ed081e",
+          "capturedAt": "2026-10-29T16:57:11.549Z",
+          "sourceCommit": "ed1071a732f1066afd4fdacb8a41fa33e75eae43",
           "dirtyPatchSha256": null,
-          "sourceTreeSha256": "5b1754f8537307bcf2a3905bc7c24591a53184d9782e4beca503a191b094d39c",
-          "schemaSha256": "db21b40ab33bcbac245b616474d5603aa5ee074ba82a0e41b80c93861f2d43c4",
-          "configurationSha256": "ce96987b2cd7fb4821f36de2e05ba80455a37b566d77ca343f9320d55e56bb59",
-          "contractSha256": "6acfb80fc1a8d6b4dc0f699f1c3d5280a0b44905c1eff6a0b199c19adad601ac",
-          "validatorSha256": "ca4a22e778de0e93418f020fa7e5b93067afb7d6d77597e4a1b4d11971eda4ae",
+          "sourceTreeSha256": "b6f385c76e2e9aa11d6143a91e28ffff8c5f89e4f688f565d11d8c6a593a5581",
+          "schemaSha256": "157cf1aaf3163e450262a0016240622edc8be62277f8907fcf327cf3893d01f2",
+          "configurationSha256": "9b04ae4cacfac877b260552a2556e092015fa16f875b419cfa369887a2627c9f",
+          "contractSha256": "8c0a023d32c00ab569e0798e655ff63866fdf63d4fcd425d1afe65c5fb0746a8",
+          "validatorSha256": "c24a4899a1fbfc570e271aeb473993c00240b690720c1773dce5f36a6ae0f7b0",
           "lockfileSha256": "a75db59723c866636d370d21e20eec1b86d5281810749331504ae42d3f043bee",
           "digestAlgorithm": "SHA-256 of sorted relative-path\\0byte-size\\0file-digest entries joined with LF; lockfile is raw byte SHA-256",
           "digestInputs": {
@@ -11750,6 +11750,14 @@
             },
             "limits": "Local checks plus, for M4 only, unauthenticated hosted health reads. No paid provider create and no live Stripe charge.",
             "setupStatus": "PASS"
+          },
+          {
+            "environmentId": "m5-hosted-stripe-test-pack-20261029",
+            "profile": "Railway hosted web with BILLING_DRIVER=stripe_test. One embedded Checkout payment for acceptance-pack. livemode false.",
+            "commercialCalls": false,
+            "fixtureOrSeed": "Sanitized Checkout Session, post-pay billing readback, and billing-return screenshot. Secrets are not stored.",
+            "limits": "Bootstrap was set off after the payment. Hosted Checkout Session URLs on this account are incomplete. No live charge, subscription, refund, or FirstPromoter write.",
+            "setupStatus": "RECORDED"
           }
         ],
         "criteria": [
@@ -11762,7 +11770,7 @@
             "applicable": null,
             "result": "BLOCKED",
             "expected": "All required milestone profiles and independent whole-stage review pass.",
-            "observed": "On 2026-10-29T05:39Z local billing schema, Checkout and reconciliation probes passed again, as did fake-provider Stripe Checkout, reconciliation and inbox integration suites and the billing presentation unit. The Stripe refunds integration suite again failed its operator step-up case (21 pass, 1 fail) and is not a PASS command. Hosted Stripe test-mode readback, owner-command replay, authenticated billing UI and live charges were not re-run. No live Stripe charge was made. An aipc disposable Docker PostgreSQL 16 fixture rerun on 127.0.0.1:55432 is archived at internal/evidence/acceptance/aipc-local-55432-20261029/. billing-schema, billing-reconciliation, credit-ledger, credit-reservation, credit-refund, billing-checkout, and credit-migration-backfill exited 0. The billing-checkout case count of 10 is a supplied run fact; the retained summary snippet does not include that count. Defect M5-LOCAL-REFUND-STEPUP-20261029 stays OPEN. No live Stripe charge, refund, or payout was made. This does not close M5.",
+            "observed": "On 2026-10-29T05:39Z local billing schema, Checkout and reconciliation probes passed again, as did fake-provider Stripe Checkout, reconciliation and inbox integration suites and the billing presentation unit. The Stripe refunds integration suite again failed its operator step-up case (21 pass, 1 fail) and is not a PASS command. The hosted Stripe test-mode acceptance-pack path is PASS_paid_and_reconciled (embedded Checkout, livemode false, 900 cents, 250 credits) and is archived at internal/evidence/acceptance/stripe-test-pack-20261029/. Hosted Checkout Session URLs are not PASS. Owner-command replay, authenticated billing UI, the $25 subscription, refunds, and live charges were not run. No live Stripe charge was made. An aipc disposable Docker PostgreSQL 16 fixture rerun on 127.0.0.1:55432 is archived at internal/evidence/acceptance/aipc-local-55432-20261029/. billing-schema, billing-reconciliation, credit-ledger, credit-reservation, credit-refund, billing-checkout, and credit-migration-backfill exited 0. The billing-checkout case count of 10 is a supplied run fact; the retained summary snippet does not include that count. Defect M5-LOCAL-REFUND-STEPUP-20261029 stays OPEN. No live Stripe charge, refund, or payout was made. This does not close M5. Additional evidence: On 2026-10-29T05:39Z local billing schema, Checkout and reconciliation probes passed again, as did fake-provider Stripe Checkout, reconciliation and inbox integration suites and the billing presentation unit. The Stripe refunds integration suite again failed its operator step-up case (21 pass, 1 fail) and is not a PASS command. The hosted Stripe test-mode acceptance-pack path is PASS_paid_and_reconciled (embedded Checkout, livemode false, 900 cents, 250 credits) and is archived at internal/evidence/acceptance/stripe-test-pack-20261029/. Hosted Checkout Session URLs are not PASS. The signed-in owner billing page is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md. Sign-in is /login and /sign-in is 404. The page shows account active, one paid credit pack at USD 9.00, 250 credits available, zero subscriptions, and Recovery Clear. The member billing denial is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md. The member signed in via /login. The billing page shows Billing unavailable and that the view is restricted to the current workspace owner, with no cash or credit controls. Mobile layout, refund-command replay, the $25 subscription, and live charges were not closed. No live Stripe charge was made. An aipc disposable Docker PostgreSQL 16 fixture rerun on 127.0.0.1:55432 is archived at internal/evidence/acceptance/aipc-local-55432-20261029/. billing-schema, billing-reconciliation, credit-ledger, credit-reservation, credit-refund, billing-checkout, and credit-migration-backfill exited 0. The billing-checkout case count of 10 is a supplied run fact; the retained summary snippet does not include that count. Defect M5-LOCAL-REFUND-STEPUP-20261029 stays OPEN. No live Stripe charge, refund, or payout was made. This does not close M5.",
             "assertions": null,
             "commandRef": null,
             "iteration": null,
@@ -11786,7 +11794,16 @@
               "internal/evidence/acceptance/aipc-local-55432-20261029/m5-summary-55432.json",
               "internal/evidence/acceptance/aipc-local-55432-20261029/m6-summary-55432.json",
               "internal/evidence/acceptance/aipc-local-55432-20261029/probe-m6-two-factor-55432.out.txt",
-              "internal/evidence/acceptance/aipc-local-55432-20261029/UPDATE-INSTRUCTIONS.md"
+              "internal/evidence/acceptance/aipc-local-55432-20261029/UPDATE-INSTRUCTIONS.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/RUN.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/HOSTED_CHECKOUT_URL_DEFECT.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/embedded-paid.sanitized.json",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-readback-postpay.sanitized.json",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-owner-signed-in.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-member-denied.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md"
             ]
           },
           {
@@ -11798,7 +11815,7 @@
             "applicable": null,
             "result": "BLOCKED",
             "expected": "All required milestone profiles and independent whole-stage review pass.",
-            "observed": "On 2026-10-29T05:39Z local billing schema, Checkout and reconciliation probes passed again, as did fake-provider Stripe Checkout, reconciliation and inbox integration suites and the billing presentation unit. The Stripe refunds integration suite again failed its operator step-up case (21 pass, 1 fail) and is not a PASS command. Hosted Stripe test-mode readback, owner-command replay, authenticated billing UI and live charges were not re-run. No live Stripe charge was made. An aipc disposable Docker PostgreSQL 16 fixture rerun on 127.0.0.1:55432 is archived at internal/evidence/acceptance/aipc-local-55432-20261029/. billing-schema, billing-reconciliation, credit-ledger, credit-reservation, credit-refund, billing-checkout, and credit-migration-backfill exited 0. The billing-checkout case count of 10 is a supplied run fact; the retained summary snippet does not include that count. Defect M5-LOCAL-REFUND-STEPUP-20261029 stays OPEN. No live Stripe charge, refund, or payout was made. This does not close M5.",
+            "observed": "On 2026-10-29T05:39Z local billing schema, Checkout and reconciliation probes passed again, as did fake-provider Stripe Checkout, reconciliation and inbox integration suites and the billing presentation unit. The Stripe refunds integration suite again failed its operator step-up case (21 pass, 1 fail) and is not a PASS command. The hosted Stripe test-mode acceptance-pack path is PASS_paid_and_reconciled (embedded Checkout, livemode false, 900 cents, 250 credits) and is archived at internal/evidence/acceptance/stripe-test-pack-20261029/. Hosted Checkout Session URLs are not PASS. Owner-command replay, authenticated billing UI, the $25 subscription, refunds, and live charges were not run. No live Stripe charge was made. An aipc disposable Docker PostgreSQL 16 fixture rerun on 127.0.0.1:55432 is archived at internal/evidence/acceptance/aipc-local-55432-20261029/. billing-schema, billing-reconciliation, credit-ledger, credit-reservation, credit-refund, billing-checkout, and credit-migration-backfill exited 0. The billing-checkout case count of 10 is a supplied run fact; the retained summary snippet does not include that count. Defect M5-LOCAL-REFUND-STEPUP-20261029 stays OPEN. No live Stripe charge, refund, or payout was made. This does not close M5. Additional evidence: On 2026-10-29T05:39Z local billing schema, Checkout and reconciliation probes passed again, as did fake-provider Stripe Checkout, reconciliation and inbox integration suites and the billing presentation unit. The Stripe refunds integration suite again failed its operator step-up case (21 pass, 1 fail) and is not a PASS command. The hosted Stripe test-mode acceptance-pack path is PASS_paid_and_reconciled (embedded Checkout, livemode false, 900 cents, 250 credits) and is archived at internal/evidence/acceptance/stripe-test-pack-20261029/. Hosted Checkout Session URLs are not PASS. The signed-in owner billing page is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md. Sign-in is /login and /sign-in is 404. The page shows account active, one paid credit pack at USD 9.00, 250 credits available, zero subscriptions, and Recovery Clear. The member billing denial is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md. The member signed in via /login. The billing page shows Billing unavailable and that the view is restricted to the current workspace owner, with no cash or credit controls. Mobile layout, refund-command replay, the $25 subscription, and live charges were not closed. No live Stripe charge was made. An aipc disposable Docker PostgreSQL 16 fixture rerun on 127.0.0.1:55432 is archived at internal/evidence/acceptance/aipc-local-55432-20261029/. billing-schema, billing-reconciliation, credit-ledger, credit-reservation, credit-refund, billing-checkout, and credit-migration-backfill exited 0. The billing-checkout case count of 10 is a supplied run fact; the retained summary snippet does not include that count. Defect M5-LOCAL-REFUND-STEPUP-20261029 stays OPEN. No live Stripe charge, refund, or payout was made. This does not close M5.",
             "assertions": null,
             "commandRef": null,
             "iteration": null,
@@ -11822,7 +11839,16 @@
               "internal/evidence/acceptance/aipc-local-55432-20261029/m5-summary-55432.json",
               "internal/evidence/acceptance/aipc-local-55432-20261029/m6-summary-55432.json",
               "internal/evidence/acceptance/aipc-local-55432-20261029/probe-m6-two-factor-55432.out.txt",
-              "internal/evidence/acceptance/aipc-local-55432-20261029/UPDATE-INSTRUCTIONS.md"
+              "internal/evidence/acceptance/aipc-local-55432-20261029/UPDATE-INSTRUCTIONS.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/RUN.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/HOSTED_CHECKOUT_URL_DEFECT.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/embedded-paid.sanitized.json",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-readback-postpay.sanitized.json",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-owner-signed-in.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-member-denied.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md"
             ]
           },
           {
@@ -11834,7 +11860,7 @@
             "applicable": null,
             "result": "BLOCKED",
             "expected": "All required milestone profiles and independent whole-stage review pass.",
-            "observed": "On 2026-10-29T05:39Z local billing schema, Checkout and reconciliation probes passed again, as did fake-provider Stripe Checkout, reconciliation and inbox integration suites and the billing presentation unit. The Stripe refunds integration suite again failed its operator step-up case (21 pass, 1 fail) and is not a PASS command. Hosted Stripe test-mode readback, owner-command replay, authenticated billing UI and live charges were not re-run. No live Stripe charge was made. An aipc disposable Docker PostgreSQL 16 fixture rerun on 127.0.0.1:55432 is archived at internal/evidence/acceptance/aipc-local-55432-20261029/. billing-schema, billing-reconciliation, credit-ledger, credit-reservation, credit-refund, billing-checkout, and credit-migration-backfill exited 0. The billing-checkout case count of 10 is a supplied run fact; the retained summary snippet does not include that count. Defect M5-LOCAL-REFUND-STEPUP-20261029 stays OPEN. No live Stripe charge, refund, or payout was made. This does not close M5.",
+            "observed": "On 2026-10-29T05:39Z local billing schema, Checkout and reconciliation probes passed again, as did fake-provider Stripe Checkout, reconciliation and inbox integration suites and the billing presentation unit. The Stripe refunds integration suite again failed its operator step-up case (21 pass, 1 fail) and is not a PASS command. The hosted Stripe test-mode acceptance-pack path is PASS_paid_and_reconciled (embedded Checkout, livemode false, 900 cents, 250 credits) and is archived at internal/evidence/acceptance/stripe-test-pack-20261029/. Hosted Checkout Session URLs are not PASS. Owner-command replay, authenticated billing UI, the $25 subscription, refunds, and live charges were not run. No live Stripe charge was made. An aipc disposable Docker PostgreSQL 16 fixture rerun on 127.0.0.1:55432 is archived at internal/evidence/acceptance/aipc-local-55432-20261029/. billing-schema, billing-reconciliation, credit-ledger, credit-reservation, credit-refund, billing-checkout, and credit-migration-backfill exited 0. The billing-checkout case count of 10 is a supplied run fact; the retained summary snippet does not include that count. Defect M5-LOCAL-REFUND-STEPUP-20261029 stays OPEN. No live Stripe charge, refund, or payout was made. This does not close M5. Additional evidence: On 2026-10-29T05:39Z local billing schema, Checkout and reconciliation probes passed again, as did fake-provider Stripe Checkout, reconciliation and inbox integration suites and the billing presentation unit. The Stripe refunds integration suite again failed its operator step-up case (21 pass, 1 fail) and is not a PASS command. The hosted Stripe test-mode acceptance-pack path is PASS_paid_and_reconciled (embedded Checkout, livemode false, 900 cents, 250 credits) and is archived at internal/evidence/acceptance/stripe-test-pack-20261029/. Hosted Checkout Session URLs are not PASS. The signed-in owner billing page is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md. Sign-in is /login and /sign-in is 404. The page shows account active, one paid credit pack at USD 9.00, 250 credits available, zero subscriptions, and Recovery Clear. The member billing denial is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md. The member signed in via /login. The billing page shows Billing unavailable and that the view is restricted to the current workspace owner, with no cash or credit controls. Mobile layout, refund-command replay, the $25 subscription, and live charges were not closed. No live Stripe charge was made. An aipc disposable Docker PostgreSQL 16 fixture rerun on 127.0.0.1:55432 is archived at internal/evidence/acceptance/aipc-local-55432-20261029/. billing-schema, billing-reconciliation, credit-ledger, credit-reservation, credit-refund, billing-checkout, and credit-migration-backfill exited 0. The billing-checkout case count of 10 is a supplied run fact; the retained summary snippet does not include that count. Defect M5-LOCAL-REFUND-STEPUP-20261029 stays OPEN. No live Stripe charge, refund, or payout was made. This does not close M5.",
             "assertions": null,
             "commandRef": null,
             "iteration": null,
@@ -11858,7 +11884,16 @@
               "internal/evidence/acceptance/aipc-local-55432-20261029/m5-summary-55432.json",
               "internal/evidence/acceptance/aipc-local-55432-20261029/m6-summary-55432.json",
               "internal/evidence/acceptance/aipc-local-55432-20261029/probe-m6-two-factor-55432.out.txt",
-              "internal/evidence/acceptance/aipc-local-55432-20261029/UPDATE-INSTRUCTIONS.md"
+              "internal/evidence/acceptance/aipc-local-55432-20261029/UPDATE-INSTRUCTIONS.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/RUN.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/HOSTED_CHECKOUT_URL_DEFECT.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/embedded-paid.sanitized.json",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-readback-postpay.sanitized.json",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-owner-signed-in.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-member-denied.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md"
             ]
           },
           {
@@ -11870,7 +11905,7 @@
             "applicable": null,
             "result": "BLOCKED",
             "expected": "All required milestone profiles and independent whole-stage review pass.",
-            "observed": "On 2026-10-29T05:39Z local billing schema, Checkout and reconciliation probes passed again, as did fake-provider Stripe Checkout, reconciliation and inbox integration suites and the billing presentation unit. The Stripe refunds integration suite again failed its operator step-up case (21 pass, 1 fail) and is not a PASS command. Hosted Stripe test-mode readback, owner-command replay, authenticated billing UI and live charges were not re-run. No live Stripe charge was made. An aipc disposable Docker PostgreSQL 16 fixture rerun on 127.0.0.1:55432 is archived at internal/evidence/acceptance/aipc-local-55432-20261029/. billing-schema, billing-reconciliation, credit-ledger, credit-reservation, credit-refund, billing-checkout, and credit-migration-backfill exited 0. The billing-checkout case count of 10 is a supplied run fact; the retained summary snippet does not include that count. Defect M5-LOCAL-REFUND-STEPUP-20261029 stays OPEN. No live Stripe charge, refund, or payout was made. This does not close M5.",
+            "observed": "On 2026-10-29T05:39Z local billing schema, Checkout and reconciliation probes passed again, as did fake-provider Stripe Checkout, reconciliation and inbox integration suites and the billing presentation unit. The Stripe refunds integration suite again failed its operator step-up case (21 pass, 1 fail) and is not a PASS command. The hosted Stripe test-mode acceptance-pack path is PASS_paid_and_reconciled (embedded Checkout, livemode false, 900 cents, 250 credits) and is archived at internal/evidence/acceptance/stripe-test-pack-20261029/. Hosted Checkout Session URLs are not PASS. Owner-command replay, authenticated billing UI, the $25 subscription, refunds, and live charges were not run. No live Stripe charge was made. An aipc disposable Docker PostgreSQL 16 fixture rerun on 127.0.0.1:55432 is archived at internal/evidence/acceptance/aipc-local-55432-20261029/. billing-schema, billing-reconciliation, credit-ledger, credit-reservation, credit-refund, billing-checkout, and credit-migration-backfill exited 0. The billing-checkout case count of 10 is a supplied run fact; the retained summary snippet does not include that count. Defect M5-LOCAL-REFUND-STEPUP-20261029 stays OPEN. No live Stripe charge, refund, or payout was made. This does not close M5. Additional evidence: On 2026-10-29T05:39Z local billing schema, Checkout and reconciliation probes passed again, as did fake-provider Stripe Checkout, reconciliation and inbox integration suites and the billing presentation unit. The Stripe refunds integration suite again failed its operator step-up case (21 pass, 1 fail) and is not a PASS command. The hosted Stripe test-mode acceptance-pack path is PASS_paid_and_reconciled (embedded Checkout, livemode false, 900 cents, 250 credits) and is archived at internal/evidence/acceptance/stripe-test-pack-20261029/. Hosted Checkout Session URLs are not PASS. The signed-in owner billing page is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md. Sign-in is /login and /sign-in is 404. The page shows account active, one paid credit pack at USD 9.00, 250 credits available, zero subscriptions, and Recovery Clear. The member billing denial is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md. The member signed in via /login. The billing page shows Billing unavailable and that the view is restricted to the current workspace owner, with no cash or credit controls. Mobile layout, refund-command replay, the $25 subscription, and live charges were not closed. No live Stripe charge was made. An aipc disposable Docker PostgreSQL 16 fixture rerun on 127.0.0.1:55432 is archived at internal/evidence/acceptance/aipc-local-55432-20261029/. billing-schema, billing-reconciliation, credit-ledger, credit-reservation, credit-refund, billing-checkout, and credit-migration-backfill exited 0. The billing-checkout case count of 10 is a supplied run fact; the retained summary snippet does not include that count. Defect M5-LOCAL-REFUND-STEPUP-20261029 stays OPEN. No live Stripe charge, refund, or payout was made. This does not close M5.",
             "assertions": null,
             "commandRef": null,
             "iteration": null,
@@ -11894,7 +11929,16 @@
               "internal/evidence/acceptance/aipc-local-55432-20261029/m5-summary-55432.json",
               "internal/evidence/acceptance/aipc-local-55432-20261029/m6-summary-55432.json",
               "internal/evidence/acceptance/aipc-local-55432-20261029/probe-m6-two-factor-55432.out.txt",
-              "internal/evidence/acceptance/aipc-local-55432-20261029/UPDATE-INSTRUCTIONS.md"
+              "internal/evidence/acceptance/aipc-local-55432-20261029/UPDATE-INSTRUCTIONS.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/RUN.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/HOSTED_CHECKOUT_URL_DEFECT.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/embedded-paid.sanitized.json",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-readback-postpay.sanitized.json",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-owner-signed-in.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-member-denied.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md"
             ]
           },
           {
@@ -11906,7 +11950,7 @@
             "applicable": null,
             "result": "BLOCKED",
             "expected": "All required milestone profiles and independent whole-stage review pass.",
-            "observed": "On 2026-10-29T05:39Z local billing schema, Checkout and reconciliation probes passed again, as did fake-provider Stripe Checkout, reconciliation and inbox integration suites and the billing presentation unit. The Stripe refunds integration suite again failed its operator step-up case (21 pass, 1 fail) and is not a PASS command. Hosted Stripe test-mode readback, owner-command replay, authenticated billing UI and live charges were not re-run. No live Stripe charge was made. An aipc disposable Docker PostgreSQL 16 fixture rerun on 127.0.0.1:55432 is archived at internal/evidence/acceptance/aipc-local-55432-20261029/. billing-schema, billing-reconciliation, credit-ledger, credit-reservation, credit-refund, billing-checkout, and credit-migration-backfill exited 0. The billing-checkout case count of 10 is a supplied run fact; the retained summary snippet does not include that count. Defect M5-LOCAL-REFUND-STEPUP-20261029 stays OPEN. No live Stripe charge, refund, or payout was made. This does not close M5.",
+            "observed": "On 2026-10-29T05:39Z local billing schema, Checkout and reconciliation probes passed again, as did fake-provider Stripe Checkout, reconciliation and inbox integration suites and the billing presentation unit. The Stripe refunds integration suite again failed its operator step-up case (21 pass, 1 fail) and is not a PASS command. The hosted Stripe test-mode acceptance-pack path is PASS_paid_and_reconciled (embedded Checkout, livemode false, 900 cents, 250 credits) and is archived at internal/evidence/acceptance/stripe-test-pack-20261029/. Hosted Checkout Session URLs are not PASS. Owner-command replay, authenticated billing UI, the $25 subscription, refunds, and live charges were not run. No live Stripe charge was made. An aipc disposable Docker PostgreSQL 16 fixture rerun on 127.0.0.1:55432 is archived at internal/evidence/acceptance/aipc-local-55432-20261029/. billing-schema, billing-reconciliation, credit-ledger, credit-reservation, credit-refund, billing-checkout, and credit-migration-backfill exited 0. The billing-checkout case count of 10 is a supplied run fact; the retained summary snippet does not include that count. Defect M5-LOCAL-REFUND-STEPUP-20261029 stays OPEN. No live Stripe charge, refund, or payout was made. This does not close M5. Additional evidence: On 2026-10-29T05:39Z local billing schema, Checkout and reconciliation probes passed again, as did fake-provider Stripe Checkout, reconciliation and inbox integration suites and the billing presentation unit. The Stripe refunds integration suite again failed its operator step-up case (21 pass, 1 fail) and is not a PASS command. The hosted Stripe test-mode acceptance-pack path is PASS_paid_and_reconciled (embedded Checkout, livemode false, 900 cents, 250 credits) and is archived at internal/evidence/acceptance/stripe-test-pack-20261029/. Hosted Checkout Session URLs are not PASS. The signed-in owner billing page is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md. Sign-in is /login and /sign-in is 404. The page shows account active, one paid credit pack at USD 9.00, 250 credits available, zero subscriptions, and Recovery Clear. The member billing denial is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md. The member signed in via /login. The billing page shows Billing unavailable and that the view is restricted to the current workspace owner, with no cash or credit controls. Mobile layout, refund-command replay, the $25 subscription, and live charges were not closed. No live Stripe charge was made. An aipc disposable Docker PostgreSQL 16 fixture rerun on 127.0.0.1:55432 is archived at internal/evidence/acceptance/aipc-local-55432-20261029/. billing-schema, billing-reconciliation, credit-ledger, credit-reservation, credit-refund, billing-checkout, and credit-migration-backfill exited 0. The billing-checkout case count of 10 is a supplied run fact; the retained summary snippet does not include that count. Defect M5-LOCAL-REFUND-STEPUP-20261029 stays OPEN. No live Stripe charge, refund, or payout was made. This does not close M5.",
             "assertions": null,
             "commandRef": null,
             "iteration": null,
@@ -11930,7 +11974,16 @@
               "internal/evidence/acceptance/aipc-local-55432-20261029/m5-summary-55432.json",
               "internal/evidence/acceptance/aipc-local-55432-20261029/m6-summary-55432.json",
               "internal/evidence/acceptance/aipc-local-55432-20261029/probe-m6-two-factor-55432.out.txt",
-              "internal/evidence/acceptance/aipc-local-55432-20261029/UPDATE-INSTRUCTIONS.md"
+              "internal/evidence/acceptance/aipc-local-55432-20261029/UPDATE-INSTRUCTIONS.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/RUN.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/HOSTED_CHECKOUT_URL_DEFECT.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/embedded-paid.sanitized.json",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-readback-postpay.sanitized.json",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-owner-signed-in.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-member-denied.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md"
             ]
           }
         ],
@@ -11978,7 +12031,7 @@
             "result": "BLOCKED",
             "expected": null,
             "observed": null,
-            "assertions": "On 2026-10-29T05:39Z local billing schema, Checkout and reconciliation probes passed again, as did fake-provider Stripe Checkout, reconciliation and inbox integration suites and the billing presentation unit. The Stripe refunds integration suite again failed its operator step-up case (21 pass, 1 fail) and is not a PASS command. Hosted Stripe test-mode readback, owner-command replay, authenticated billing UI and live charges were not re-run. No live Stripe charge was made. An aipc disposable Docker PostgreSQL 16 fixture rerun on 127.0.0.1:55432 is archived at internal/evidence/acceptance/aipc-local-55432-20261029/. billing-schema, billing-reconciliation, credit-ledger, credit-reservation, credit-refund, billing-checkout, and credit-migration-backfill exited 0. The billing-checkout case count of 10 is a supplied run fact; the retained summary snippet does not include that count. Defect M5-LOCAL-REFUND-STEPUP-20261029 stays OPEN. No live Stripe charge, refund, or payout was made. This does not close M5.",
+            "assertions": "On 2026-10-29T05:39Z local billing schema, Checkout and reconciliation probes passed again, as did fake-provider Stripe Checkout, reconciliation and inbox integration suites and the billing presentation unit. The Stripe refunds integration suite again failed its operator step-up case (21 pass, 1 fail) and is not a PASS command. The hosted Stripe test-mode acceptance-pack path is PASS_paid_and_reconciled (embedded Checkout, livemode false, 900 cents, 250 credits) and is archived at internal/evidence/acceptance/stripe-test-pack-20261029/. Hosted Checkout Session URLs are not PASS. Owner-command replay, authenticated billing UI, the $25 subscription, refunds, and live charges were not run. No live Stripe charge was made. An aipc disposable Docker PostgreSQL 16 fixture rerun on 127.0.0.1:55432 is archived at internal/evidence/acceptance/aipc-local-55432-20261029/. billing-schema, billing-reconciliation, credit-ledger, credit-reservation, credit-refund, billing-checkout, and credit-migration-backfill exited 0. The billing-checkout case count of 10 is a supplied run fact; the retained summary snippet does not include that count. Defect M5-LOCAL-REFUND-STEPUP-20261029 stays OPEN. No live Stripe charge, refund, or payout was made. This does not close M5. Additional evidence: On 2026-10-29T05:39Z local billing schema, Checkout and reconciliation probes passed again, as did fake-provider Stripe Checkout, reconciliation and inbox integration suites and the billing presentation unit. The Stripe refunds integration suite again failed its operator step-up case (21 pass, 1 fail) and is not a PASS command. The hosted Stripe test-mode acceptance-pack path is PASS_paid_and_reconciled (embedded Checkout, livemode false, 900 cents, 250 credits) and is archived at internal/evidence/acceptance/stripe-test-pack-20261029/. Hosted Checkout Session URLs are not PASS. The signed-in owner billing page is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md. Sign-in is /login and /sign-in is 404. The page shows account active, one paid credit pack at USD 9.00, 250 credits available, zero subscriptions, and Recovery Clear. The member billing denial is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md. The member signed in via /login. The billing page shows Billing unavailable and that the view is restricted to the current workspace owner, with no cash or credit controls. Mobile layout, refund-command replay, the $25 subscription, and live charges were not closed. No live Stripe charge was made. An aipc disposable Docker PostgreSQL 16 fixture rerun on 127.0.0.1:55432 is archived at internal/evidence/acceptance/aipc-local-55432-20261029/. billing-schema, billing-reconciliation, credit-ledger, credit-reservation, credit-refund, billing-checkout, and credit-migration-backfill exited 0. The billing-checkout case count of 10 is a supplied run fact; the retained summary snippet does not include that count. Defect M5-LOCAL-REFUND-STEPUP-20261029 stays OPEN. No live Stripe charge, refund, or payout was made. This does not close M5.",
             "commandRef": null,
             "iteration": null,
             "seed": null,
@@ -12021,7 +12074,16 @@
               "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
               "internal/evidence/acceptance/M5/m5-sandbox-20261022/billing-checkout.log",
               "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-test-objects.json",
-              "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md"
+              "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/RUN.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/HOSTED_CHECKOUT_URL_DEFECT.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/embedded-paid.sanitized.json",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-readback-postpay.sanitized.json",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-owner-signed-in.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-member-denied.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md"
             ]
           },
           {
@@ -12042,7 +12104,16 @@
               "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
               "internal/evidence/acceptance/M5/m5-sandbox-20261022/billing-checkout.log",
               "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-checkout.log",
-              "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md"
+              "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/RUN.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/HOSTED_CHECKOUT_URL_DEFECT.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/embedded-paid.sanitized.json",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-readback-postpay.sanitized.json",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-owner-signed-in.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-member-denied.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md"
             ]
           },
           {
@@ -12063,7 +12134,16 @@
               "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
               "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-test-objects.json",
               "internal/evidence/acceptance/M5/m5-sandbox-20261022/billing-reconciliation.log",
-              "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md"
+              "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/RUN.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/HOSTED_CHECKOUT_URL_DEFECT.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/embedded-paid.sanitized.json",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-readback-postpay.sanitized.json",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-owner-signed-in.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-member-denied.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md"
             ]
           },
           {
@@ -12083,7 +12163,16 @@
             "evidenceRefs": [
               "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
               "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-checkout.log",
-              "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md"
+              "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/RUN.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/HOSTED_CHECKOUT_URL_DEFECT.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/embedded-paid.sanitized.json",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-readback-postpay.sanitized.json",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-owner-signed-in.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-member-denied.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md"
             ]
           },
           {
@@ -12104,7 +12193,16 @@
               "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
               "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-test-objects.json",
               "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-checkout.log",
-              "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md"
+              "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/RUN.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/HOSTED_CHECKOUT_URL_DEFECT.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/embedded-paid.sanitized.json",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-readback-postpay.sanitized.json",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-owner-signed-in.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-member-denied.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md"
             ]
           },
           {
@@ -12124,7 +12222,16 @@
             "evidenceRefs": [
               "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
               "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-reconciliation.log",
-              "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md"
+              "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/RUN.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/HOSTED_CHECKOUT_URL_DEFECT.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/embedded-paid.sanitized.json",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-readback-postpay.sanitized.json",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-owner-signed-in.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-member-denied.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md"
             ]
           },
           {
@@ -12145,7 +12252,16 @@
               "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
               "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-reconciliation.log",
               "internal/evidence/acceptance/M5/m5-sandbox-20261022/billing-reconciliation.log",
-              "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md"
+              "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/RUN.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/HOSTED_CHECKOUT_URL_DEFECT.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/embedded-paid.sanitized.json",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-readback-postpay.sanitized.json",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-owner-signed-in.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-member-denied.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md"
             ]
           },
           {
@@ -12165,7 +12281,16 @@
             "evidenceRefs": [
               "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
               "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-checkout.log",
-              "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md"
+              "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/RUN.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/HOSTED_CHECKOUT_URL_DEFECT.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/embedded-paid.sanitized.json",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-readback-postpay.sanitized.json",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-owner-signed-in.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-member-denied.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md"
             ]
           },
           {
@@ -12185,7 +12310,16 @@
             "evidenceRefs": [
               "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
               "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-reconciliation.log",
-              "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md"
+              "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/RUN.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/HOSTED_CHECKOUT_URL_DEFECT.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/embedded-paid.sanitized.json",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-readback-postpay.sanitized.json",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-owner-signed-in.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-member-denied.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md"
             ]
           },
           {
@@ -12205,7 +12339,16 @@
             "evidenceRefs": [
               "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
               "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-reconciliation.log",
-              "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md"
+              "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/RUN.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/HOSTED_CHECKOUT_URL_DEFECT.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/embedded-paid.sanitized.json",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-readback-postpay.sanitized.json",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-owner-signed-in.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-member-denied.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md"
             ]
           },
           {
@@ -12227,7 +12370,16 @@
               "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-test-objects.json",
               "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-database-readback.json",
               "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-reconciliation.log",
-              "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md"
+              "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/RUN.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/HOSTED_CHECKOUT_URL_DEFECT.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/embedded-paid.sanitized.json",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-readback-postpay.sanitized.json",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-owner-signed-in.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-member-denied.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md"
             ]
           },
           {
@@ -12247,7 +12399,16 @@
             "evidenceRefs": [
               "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
               "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-reconciliation.log",
-              "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md"
+              "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/RUN.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/HOSTED_CHECKOUT_URL_DEFECT.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/embedded-paid.sanitized.json",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-readback-postpay.sanitized.json",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-owner-signed-in.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-member-denied.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md"
             ]
           },
           {
@@ -12267,7 +12428,16 @@
             "evidenceRefs": [
               "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
               "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-test-objects.json",
-              "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md"
+              "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/RUN.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/HOSTED_CHECKOUT_URL_DEFECT.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/embedded-paid.sanitized.json",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-readback-postpay.sanitized.json",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-owner-signed-in.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-member-denied.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md"
             ]
           },
           {
@@ -12287,7 +12457,16 @@
             "evidenceRefs": [
               "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
               "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-test-objects.json",
-              "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md"
+              "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/RUN.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/HOSTED_CHECKOUT_URL_DEFECT.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/embedded-paid.sanitized.json",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-readback-postpay.sanitized.json",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-owner-signed-in.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-member-denied.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md"
             ]
           },
           {
@@ -12307,7 +12486,16 @@
             "evidenceRefs": [
               "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
               "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-reconciliation.log",
-              "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md"
+              "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/RUN.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/HOSTED_CHECKOUT_URL_DEFECT.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/embedded-paid.sanitized.json",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-readback-postpay.sanitized.json",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-owner-signed-in.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-member-denied.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md"
             ]
           },
           {
@@ -12327,7 +12515,16 @@
             "evidenceRefs": [
               "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
               "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-reconciliation.log",
-              "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md"
+              "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/RUN.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/HOSTED_CHECKOUT_URL_DEFECT.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/embedded-paid.sanitized.json",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-readback-postpay.sanitized.json",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-owner-signed-in.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-member-denied.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md"
             ]
           },
           {
@@ -12347,7 +12544,16 @@
             "evidenceRefs": [
               "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
               "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-reconciliation.log",
-              "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md"
+              "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/RUN.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/HOSTED_CHECKOUT_URL_DEFECT.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/embedded-paid.sanitized.json",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-readback-postpay.sanitized.json",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-owner-signed-in.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-member-denied.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md"
             ]
           },
           {
@@ -12369,7 +12575,16 @@
               "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-database-readback.json",
               "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-test-objects.json",
               "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-refunds.log",
-              "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md"
+              "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/RUN.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/HOSTED_CHECKOUT_URL_DEFECT.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/embedded-paid.sanitized.json",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-readback-postpay.sanitized.json",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-owner-signed-in.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-member-denied.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md"
             ]
           },
           {
@@ -12390,7 +12605,16 @@
               "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
               "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-reconciliation.log",
               "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-refunds.log",
-              "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md"
+              "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/RUN.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/HOSTED_CHECKOUT_URL_DEFECT.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/embedded-paid.sanitized.json",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-readback-postpay.sanitized.json",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-owner-signed-in.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-member-denied.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md"
             ]
           },
           {
@@ -12410,7 +12634,16 @@
             "evidenceRefs": [
               "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
               "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-reconciliation.log",
-              "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md"
+              "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/RUN.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/HOSTED_CHECKOUT_URL_DEFECT.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/embedded-paid.sanitized.json",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-readback-postpay.sanitized.json",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-owner-signed-in.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-member-denied.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md"
             ]
           },
           {
@@ -12431,7 +12664,16 @@
               "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
               "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-database-readback.json",
               "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-refunds.log",
-              "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md"
+              "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/RUN.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/HOSTED_CHECKOUT_URL_DEFECT.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/embedded-paid.sanitized.json",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-readback-postpay.sanitized.json",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-owner-signed-in.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-member-denied.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md"
             ]
           },
           {
@@ -12451,7 +12693,16 @@
             "evidenceRefs": [
               "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
               "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-reconciliation.log",
-              "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md"
+              "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/RUN.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/HOSTED_CHECKOUT_URL_DEFECT.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/embedded-paid.sanitized.json",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-readback-postpay.sanitized.json",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-owner-signed-in.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-member-denied.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md"
             ]
           },
           {
@@ -12471,7 +12722,16 @@
             "evidenceRefs": [
               "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
               "internal/evidence/acceptance/M5/m5-sandbox-20261022/billing-reconciliation.log",
-              "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md"
+              "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/RUN.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/HOSTED_CHECKOUT_URL_DEFECT.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/embedded-paid.sanitized.json",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-readback-postpay.sanitized.json",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-owner-signed-in.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-member-denied.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md"
             ]
           },
           {
@@ -12492,7 +12752,16 @@
               "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
               "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-reconciliation.log",
               "internal/evidence/acceptance/M5/m5-sandbox-20261022/billing-reconciliation.log",
-              "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md"
+              "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/RUN.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/HOSTED_CHECKOUT_URL_DEFECT.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/embedded-paid.sanitized.json",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-readback-postpay.sanitized.json",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-owner-signed-in.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-member-denied.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md"
             ]
           },
           {
@@ -12512,7 +12781,16 @@
             "evidenceRefs": [
               "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
               "internal/evidence/acceptance/M5/m5-sandbox-20261022/billing-reconciliation.log",
-              "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md"
+              "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/RUN.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/HOSTED_CHECKOUT_URL_DEFECT.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/embedded-paid.sanitized.json",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-readback-postpay.sanitized.json",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-owner-signed-in.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-member-denied.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md"
             ]
           },
           {
@@ -12534,7 +12812,16 @@
               "internal/evidence/acceptance/M5/m5-sandbox-20261022/owner-command-replay.json",
               "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-database-readback.json",
               "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-refunds.log",
-              "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md"
+              "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/RUN.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/HOSTED_CHECKOUT_URL_DEFECT.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/embedded-paid.sanitized.json",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-readback-postpay.sanitized.json",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-owner-signed-in.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-member-denied.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md"
             ]
           },
           {
@@ -12554,7 +12841,16 @@
             "evidenceRefs": [
               "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
               "internal/evidence/acceptance/M5/m5-sandbox-20261022/owner-billing-ui-observation.md",
-              "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md"
+              "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/RUN.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/HOSTED_CHECKOUT_URL_DEFECT.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/embedded-paid.sanitized.json",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-readback-postpay.sanitized.json",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-owner-signed-in.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-member-denied.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md"
             ]
           },
           {
@@ -12574,7 +12870,16 @@
             "evidenceRefs": [
               "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
               "internal/evidence/acceptance/M5/m5-sandbox-20261022/owner-command-replay.json",
-              "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md"
+              "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/RUN.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/HOSTED_CHECKOUT_URL_DEFECT.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/embedded-paid.sanitized.json",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-readback-postpay.sanitized.json",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-owner-signed-in.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-member-denied.png",
+              "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md"
             ]
           }
         ],
@@ -12738,6 +13043,26 @@
             "startedAt": null,
             "finishedAt": null,
             "outputRef": "internal/evidence/acceptance/local-rerun-20261029/stripe-inbox-integration.log"
+          },
+          {
+            "commandId": "stripe-refunds-integration",
+            "invocation": "node --experimental-strip-types --test --test-reporter spec tests/integration/stripe-refunds.test.ts",
+            "environmentId": "m5-current-local-20261029",
+            "status": "PASS",
+            "exitCode": 0,
+            "startedAt": null,
+            "finishedAt": null,
+            "outputRef": "internal/evidence/acceptance/M5/m5-current-20261029/stripe-refunds-stepup-closure.log"
+          },
+          {
+            "commandId": "root-dependency-integrity",
+            "invocation": "corepack pnpm exec node scripts/check-root-integrity.mjs; node --experimental-strip-types --test tests/unit/root-integrity.test.ts tests/unit/candidate-digests.test.ts",
+            "environmentId": "root-dependency-baseline-20261029",
+            "status": "PASS",
+            "exitCode": 0,
+            "startedAt": null,
+            "finishedAt": null,
+            "outputRef": "internal/evidence/acceptance/root-dependency-baseline-20261029.log"
           }
         ],
         "coverage": {
@@ -12752,12 +13077,15 @@
           {
             "id": "M5-LOCAL-REFUND-STEPUP-20261029",
             "severity": "P2",
-            "status": "OPEN",
+            "status": "CLOSED",
             "mandatoryCriterionAffected": false,
-            "summary": "stripe-refunds integration rerun at 2026-10-29T05:39:14Z: 21 pass and 1 fail. The operator step-up case still does not reject after operator_step_ups is deleted while optional two-factor policy is off (expected /factor|step.up/i). No live Stripe call was made, and the suite is not recorded as PASS.",
+            "summary": "The 2026-10-29T05:39:14Z stripe-refunds integration log remains 21 pass and 1 fail: the operator step-up case deleted operator_step_ups while optional two-factor enforcement was off. Closed at 2026-10-29T08:41:30Z after that case enables enforcement before the deletion. The later local fake-provider run is 22 pass and 0 fail. No live Stripe call was made. This does not close M5.",
             "evidenceRefs": [
-              "internal/evidence/acceptance/local-rerun-20261029/stripe-refunds-integration.log"
-            ]
+              "internal/evidence/acceptance/local-rerun-20261029/stripe-refunds-integration.log",
+              "internal/evidence/acceptance/M5/m5-current-20261029/stripe-refunds-stepup-closure.log"
+            ],
+            "closedAt": "2026-10-29T08:41:30.502Z",
+            "resolution": "The shared operator authorizer already skips a second-factor stamp only while two_factor_required is false, which REQ-SEC-04, REQ-IAM-05, and REQ-OPS-02 require. A fresh migration inserts that flag as false, so the old assertion demanded a rejection OpenSpec does not allow. requestBillingRefundAsOperator still calls authorizeOperatorCommand before provider work or refund creation. With enforcement enabled, a deleted stamp is rejected. Expected version and the live session were already rejected. The always-on step-up hypothesis was not applied."
           }
         ],
         "externalInputs": [
@@ -15090,14 +15418,14 @@
           }
         ],
         "candidate": {
-          "capturedAt": "2026-10-29T07:22:36.789Z",
-          "sourceCommit": "f59f1f094dab084374331de9ad2b7a6fb7ed081e",
+          "capturedAt": "2026-10-29T16:57:11.549Z",
+          "sourceCommit": "ed1071a732f1066afd4fdacb8a41fa33e75eae43",
           "dirtyPatchSha256": null,
-          "sourceTreeSha256": "5b1754f8537307bcf2a3905bc7c24591a53184d9782e4beca503a191b094d39c",
-          "schemaSha256": "db21b40ab33bcbac245b616474d5603aa5ee074ba82a0e41b80c93861f2d43c4",
-          "configurationSha256": "ce96987b2cd7fb4821f36de2e05ba80455a37b566d77ca343f9320d55e56bb59",
-          "contractSha256": "6acfb80fc1a8d6b4dc0f699f1c3d5280a0b44905c1eff6a0b199c19adad601ac",
-          "validatorSha256": "ca4a22e778de0e93418f020fa7e5b93067afb7d6d77597e4a1b4d11971eda4ae",
+          "sourceTreeSha256": "b6f385c76e2e9aa11d6143a91e28ffff8c5f89e4f688f565d11d8c6a593a5581",
+          "schemaSha256": "157cf1aaf3163e450262a0016240622edc8be62277f8907fcf327cf3893d01f2",
+          "configurationSha256": "9b04ae4cacfac877b260552a2556e092015fa16f875b419cfa369887a2627c9f",
+          "contractSha256": "8c0a023d32c00ab569e0798e655ff63866fdf63d4fcd425d1afe65c5fb0746a8",
+          "validatorSha256": "c24a4899a1fbfc570e271aeb473993c00240b690720c1773dce5f36a6ae0f7b0",
           "lockfileSha256": "a75db59723c866636d370d21e20eec1b86d5281810749331504ae42d3f043bee",
           "digestAlgorithm": "SHA-256 of sorted relative-path\\0byte-size\\0file-digest entries joined with LF; lockfile is raw byte SHA-256",
           "digestInputs": {

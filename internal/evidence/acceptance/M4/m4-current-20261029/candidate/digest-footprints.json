@@ -826,26 +826,6 @@
       "sha256": "4f9286dc39758b4a755ea6d8ea4db6d01d0e8aece54b311ba0647ba24ba58440"
     },
     {
-      "path": "scripts/staging-affiliate-account-sync-once.ts",
-      "bytes": 530,
-      "sha256": "8a72225d8524012ca16f0dd631efd659524072f35e0b73a8f16a620c28780865"
-    },
-    {
-      "path": "scripts/staging-affiliate-holds.ts",
-      "bytes": 989,
-      "sha256": "58498d54c8d6cbf207d83549726405b22dc869c0181fe7d0d9dc537b5367a60f"
-    },
-    {
-      "path": "scripts/staging-affiliate-sale-diagnose.ts",
-      "bytes": 2972,
-      "sha256": "08b117d133838fd48973e0ee6b23549843955c6866f9470b8a0dea4a434473ef"
-    },
-    {
-      "path": "scripts/staging-affiliate-sync-cycle-once.ts",
-      "bytes": 2589,
-      "sha256": "40d400d28d893cade189db3fed59f2fb90a402095ab8516145fac650fc60aa06"
-    },
-    {
       "path": "scripts/validate-change.ts",
       "bytes": 9960,
       "sha256": "179d3e747aab36bbc89ac74f3a4ddcf04ce5252533c06a325360dccd8067cc5f"
@@ -2097,8 +2077,8 @@
     },
     {
       "path": "src/lib/auth.ts",
-      "bytes": 9524,
-      "sha256": "6d2785283d19d60974e44aedad81ea7b9124d6416e04a25ea7423706a09aaf40"
+      "bytes": 9326,
+      "sha256": "d9f9911248c5b124e6543f953ec267e4a531349ebc2e3d26df9bfc19cb6250cb"
     },
     {
       "path": "src/lib/demo.ts",
@@ -4167,26 +4147,6 @@
       "path": "scripts/run-m8-local-preflight.mjs",
       "bytes": 3469,
       "sha256": "4f9286dc39758b4a755ea6d8ea4db6d01d0e8aece54b311ba0647ba24ba58440"
-    },
-    {
-      "path": "scripts/staging-affiliate-account-sync-once.ts",
-      "bytes": 530,
-      "sha256": "8a72225d8524012ca16f0dd631efd659524072f35e0b73a8f16a620c28780865"
-    },
-    {
-      "path": "scripts/staging-affiliate-holds.ts",
-      "bytes": 989,
-      "sha256": "58498d54c8d6cbf207d83549726405b22dc869c0181fe7d0d9dc537b5367a60f"
-    },
-    {
-      "path": "scripts/staging-affiliate-sale-diagnose.ts",
-      "bytes": 2972,
-      "sha256": "08b117d133838fd48973e0ee6b23549843955c6866f9470b8a0dea4a434473ef"
-    },
-    {
-      "path": "scripts/staging-affiliate-sync-cycle-once.ts",
-      "bytes": 2589,
-      "sha256": "40d400d28d893cade189db3fed59f2fb90a402095ab8516145fac650fc60aa06"
     },
     {
       "path": "scripts/validate-change.ts",
