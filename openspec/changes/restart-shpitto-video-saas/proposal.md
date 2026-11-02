@@ -17,7 +17,7 @@ The reviewed input has D01-D31, ten journeys, 31 acceptance gates and 62 scenari
 
 ## Capabilities
 
-Implementation acceptance follows the [M0–M8 staged contract](acceptance-gates.md). Existing gate tasks retain their IDs; M8 separates RC, paid-Beta and stable readiness. All stage records remain NOT_STARTED until observed implementation evidence is independently reviewed.
+Implementation acceptance follows the [M0–M8 staged contract](acceptance-gates.md). Existing gate tasks retain their IDs; M8 separates RC, BETA and STABLE evidence checkpoints. Stage records accumulate observed evidence through M7 and M8-RC/BETA without advancing to `PASS`; exactly one manual acceptance decision occurs at M8-STABLE.
 
 ### New Capabilities
 

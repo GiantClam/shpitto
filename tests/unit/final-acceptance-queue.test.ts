@@ -18,7 +18,7 @@ const passing = {
   integrationDecision: {decision: 'NOT_RUN'},
 };
 
-test('manual review is deferred when all automated evidence passes', () => {
+test('M8 manual review is deferred when all automated evidence passes', () => {
   assert.deepEqual(assessAutomatedEvidence(passing), {status: 'READY_FOR_REVIEW', blockingReasons: []});
 });
 
@@ -27,16 +27,31 @@ test('automated failures remain blocking', () => {
   assert.deepEqual(assessAutomatedEvidence({...passing, status: 'STALE'}), {status: 'IN_PROGRESS', blockingReasons: ['candidate-stale']});
 });
 
-test('queue accumulates manual actions without changing automated readiness', () => {
+test('queue accumulates evidence behind one M8 manual decision', () => {
   const queue = buildFinalAcceptanceQueue({
     register: {stages: [{stageId: 'M3', name: 'Persistent local product', evidenceRecordRefs: ['m3/record.json']}]},
     records: new Map([['m3/record.json', passing]]),
     generatedAt: '2026-10-24T00:00:00.000Z',
   });
   assert.equal(queue.entries[0].automatedStatus, 'READY_FOR_REVIEW');
-  assert.deepEqual(queue.entries[0].manualActions.map((action) => action.status), ['PENDING', 'PENDING']);
+  assert.equal(queue.manualDecision.id, 'm8-final-manual-acceptance');
+  assert.equal(queue.manualDecision.checkpointId, 'M8-STABLE');
+  assert.equal(queue.manualDecision.status, 'PENDING');
   assert.equal(queue.summary.automatedReady, 1);
   assert.equal(queue.summary.manualReviewPending, 1);
+});
+
+test('M8 decision waits while any evidence remains incomplete', () => {
+  const queue = buildFinalAcceptanceQueue({
+    register: {stages: [{stageId: 'M3', name: 'Persistent local product', evidenceRecordRefs: ['m3/ready.json', 'm3/pending.json']}]},
+    records: new Map([
+      ['m3/ready.json', passing],
+      ['m3/pending.json', {...passing, coverage: {status: 'PASS', percent: 79}}],
+    ]),
+    generatedAt: '2026-10-24T00:00:00.000Z',
+  });
+  assert.equal(queue.manualDecision.status, 'WAITING_FOR_EVIDENCE');
+  assert.equal(queue.summary.manualReviewPending, 0);
 });
 
 test('queue gives humans a complete automated explanation and explicit decision choices', () => {
@@ -54,7 +69,7 @@ test('queue gives humans a complete automated explanation and explicit decision 
     generatedAt: '2026-10-24T00:00:00.000Z',
   });
   const entry = queue.entries[0];
-  assert.equal(entry.automatedExplanation.recommendation, 'HUMAN_DECISION_REQUIRED');
+  assert.equal(entry.automatedExplanation.recommendation, 'M8_MANUAL_DECISION_REQUIRED');
   assert.equal(entry.automatedExplanation.criteria[0].expected, 'One grant');
   assert.equal(entry.automatedExplanation.scenarios[0].observed, 'Same result');
   assert.equal(entry.automatedExplanation.reportRef, 'report.md');

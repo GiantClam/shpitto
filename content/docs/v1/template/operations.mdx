@@ -9,24 +9,23 @@ relatedContracts: [D08, D18, G08, G18]
 
 ## Administrative access
 
-Workspace ownership does not grant global administration. An authorized operator
-signs in with the shared account and opens `/admin`. SMTP delivery and operator
-two-factor enforcement are optional installation settings. When two-factor
-enforcement is enabled, operator and superadmin commands require successful
-same-session verification within the last ten minutes. In every mode, commands
-require a reason, the current resource version, an idempotency key and server-side
-role authorization.
+Workspace ownership does not grant global administration. There is no built-in
+production Superadmin username or password. On a fresh installation, the first
+successful password registration to win the server-side claim can open `/admin`
+as Superadmin. SMTP delivery and operator two-factor enforcement are optional
+installation settings. When two-factor enforcement is enabled, operator and
+superadmin commands require successful same-session verification within the last
+ten minutes. In every mode, commands require a reason, the current resource
+version, an idempotency key and server-side role authorization.
 
 Role revocation and account disablement take effect on the next request. Role
-changes and disablement preserve a usable superadmin. On a fresh installation,
-the first successful password registration to win the server-side claim is
-automatically assigned the Superadmin role. Concurrent registration creates one initial
-owner, and later registration or restart cannot reopen the claim. The signup
-request cannot select a role. Installations that already contained users before
-this capability use the audited `pnpm ops:owner bootstrap` maintenance command.
-On a public deployment, complete this first registration before sharing the app
-URL; the first account to claim ownership will be the Superadmin. Emergency
-recovery remains an audited server procedure.
+changes and disablement preserve a usable superadmin. Concurrent registration
+creates one initial owner, and later registration or restart cannot reopen the
+claim. The signup request cannot select a role. Installations that already
+contained users before this capability use the audited `pnpm ops:owner bootstrap`
+maintenance command. On a public deployment, complete this first registration
+before sharing the app URL; the first account to claim ownership will be the
+Superadmin. Emergency recovery remains an audited server procedure.
 
 ## Configure optional security
 

@@ -9307,7 +9307,7 @@
     },
     {
       "id": "9.15",
-      "title": "M8 gate (RC, BETA and STABLE records; complete only after STABLE PASS): accept only the exact regenerated 9.3 candidate proven by 9.4/9.14, with both production paths, SC-OPS-13 closure, acquired-version rights, matching Docs and complete V1 evidence; recheck artifact digest immediately before delivery and keep blocked commercial/live actions incomplete.",
+      "title": "M8 gate (RC, BETA and STABLE evidence; complete only after the single M8-STABLE manual PASS): accept only the exact regenerated 9.3 candidate proven by 9.4/9.14, with both production paths, SC-OPS-13 closure, acquired-version rights, matching Docs and complete V1 evidence; recheck artifact digest immediately before delivery and keep blocked commercial/live actions incomplete.",
       "milestone": "M8",
       "depends": [
         "9.1",

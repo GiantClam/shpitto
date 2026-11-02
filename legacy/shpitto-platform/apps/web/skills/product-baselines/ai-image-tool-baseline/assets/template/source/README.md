@@ -17,6 +17,8 @@ Use the preview flag when you want the generated template to run with production
 SHPITTO_TEMPLATE_PREVIEW=1 NEXTAUTH_SECRET=local-preview-secret NEXTAUTH_URL=http://127.0.0.1:4173 pnpm start --hostname 127.0.0.1 --port 4173
 ```
 
+The preview Superadmin identity is `preview@shpitto.local` with the prefilled password `flux-demo`. Preview credentials accept any password with at least six characters and are available only outside production. Production has no built-in Superadmin password: configure Google OAuth and list administrator emails in `CMS_ADMIN_EMAILS`.
+
 Google OAuth remains the production path. Preview credentials are only enabled outside production; production rejects SHPITTO_TEMPLATE_PREVIEW. Production administrators must be listed in CMS_ADMIN_EMAILS.
 
 ## CMS Integration

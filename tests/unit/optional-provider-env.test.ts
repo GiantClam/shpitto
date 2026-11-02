@@ -9,7 +9,7 @@ import {verifyFalWebhook} from '../../src/adapters/providers/fal/webhook.ts';
 
 test('core production config does not require inactive provider webhook credentials', () => {
   const fixture: Record<string, string | undefined> = {
-    NODE_ENV: 'production', APP_URL: 'https://app.example.test', DATABASE_URL: 'postgres://fixture@localhost/fixture',
+    NODE_ENV: 'production', SHPTITTO_RUNTIME_PROFILE: undefined, APP_URL: 'https://app.example.test', DATABASE_URL: 'postgres://fixture@localhost/fixture',
     STORAGE_S3_ENDPOINT: 'https://s3.example.test', STORAGE_S3_REGION: 'us-east-1', STORAGE_S3_BUCKET: 'fixture', STORAGE_S3_ACCESS_KEY_ID: 'fixture-access', STORAGE_S3_SECRET_ACCESS_KEY: 'fixture-secret', STORAGE_S3_FORCE_PATH_STYLE: 'false',
     BETTER_AUTH_SECRET: 'local-contract-test-only-secret', STORAGE_DRIVER: 's3-compatible', GENERATION_DRIVER: 'provider', MAIL_DRIVER: 'smtp',
     REPLICATE_WEBHOOK_SECRET: undefined, REPLICATE_WEBHOOK_ACCOUNT_ID: undefined, FAL_WEBHOOK_PUBLIC_KEY_PEM: undefined, FAL_WEBHOOK_ACCOUNT_ID: undefined,
@@ -44,11 +44,12 @@ test('core production config does not require inactive provider webhook credenti
 
 
 test('production storage fails closed without a private S3-compatible configuration', () => {
-  const keys = ['NODE_ENV', 'NEXT_PHASE', 'APP_URL', 'DATABASE_URL', 'BETTER_AUTH_SECRET', 'STORAGE_DRIVER', 'GENERATION_DRIVER', 'MAIL_DRIVER', 'STORAGE_S3_ENDPOINT', 'STORAGE_S3_REGION', 'STORAGE_S3_BUCKET', 'STORAGE_S3_ACCESS_KEY_ID', 'STORAGE_S3_SECRET_ACCESS_KEY'];
+  const keys = ['NODE_ENV', 'NEXT_PHASE', 'SHPTITTO_RUNTIME_PROFILE', 'APP_URL', 'DATABASE_URL', 'BETTER_AUTH_SECRET', 'STORAGE_DRIVER', 'GENERATION_DRIVER', 'MAIL_DRIVER', 'STORAGE_S3_ENDPOINT', 'STORAGE_S3_REGION', 'STORAGE_S3_BUCKET', 'STORAGE_S3_ACCESS_KEY_ID', 'STORAGE_S3_SECRET_ACCESS_KEY'];
   const previous = Object.fromEntries(keys.map((key) => [key, process.env[key]]));
   try {
     Object.assign(process.env, {NODE_ENV:'production', APP_URL:'https://app.example.test', DATABASE_URL:'postgres://fixture@localhost/fixture', BETTER_AUTH_SECRET:'production-test-secret', STORAGE_DRIVER:'local', GENERATION_DRIVER:'provider', MAIL_DRIVER:'smtp'});
-    for (const key of keys.slice(8)) delete process.env[key];
+    delete process.env.SHPTITTO_RUNTIME_PROFILE;
+    for (const key of keys.slice(9)) delete process.env[key];
     assert.throws(() => getServerEnv(), /STORAGE_DRIVER/i);
     process.env.STORAGE_DRIVER='s3';
     process.env.NEXT_PHASE='phase-production-build';

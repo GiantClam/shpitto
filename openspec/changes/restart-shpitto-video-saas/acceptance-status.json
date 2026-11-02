@@ -3,7 +3,7 @@
   "changeId": "restart-shpitto-video-saas",
   "date": "2026-10-29",
   "scope": "Historical M0-M3 approvals remain on their original candidates. Current M3 applicability for the 2026-10-29 M4/M5/M6 development records is STALE. Those records were rebound to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e and remain IN_PROGRESS.",
-  "enforcementStatus": "Historical PASS decisions remain scoped to their original candidates. Current development records and stage checker reject incomplete or stale automated evidence while allowing READY_FOR_REVIEW records to advance into the final manual queue.",
+  "enforcementStatus": "Historical PASS decisions remain scoped to their original candidates and are immutable archival evidence. Current evidence collection is append-only: M0-M7 and M8-RC/M8-BETA may reach READY_FOR_REVIEW but may not advance to PASS; exactly one manual decision is recorded at M8-STABLE.",
   "policyRef": "acceptance-gates.md",
   "recordTemplateRef": "acceptance-record.template.json",
   "reviewPolicy": {
@@ -11,10 +11,15 @@
     "finalManualCheckpoint": "M8-STABLE",
     "queueRef": "internal/evidence/final-manual-acceptance-queue.json",
     "deferredActions": [
-      "independent-review",
-      "integration-decision"
+      "m8-final-manual-acceptance"
     ],
-    "blockingRule": "Deferred manual actions do not block unrelated automated verification; FAIL, BLOCKED and STALE automated evidence still block dependent work."
+    "manualDecisionCount": 1,
+    "blockingRule": "The deferred M8-STABLE decision does not block unrelated automated verification; FAIL, BLOCKED and STALE automated evidence still block dependent work."
+  },
+  "evidenceCollectionPolicy": {
+    "stageStatusRule": "During active evidence collection, M0-M7 and M8-RC/M8-BETA remain evidence-only and cannot be promoted to PASS.",
+    "historicalPassRule": "Existing PASS records remain immutable archival evidence scoped to their original candidates and do not authorize current claims.",
+    "manualDecisionRule": "Record exactly one manual acceptance decision at M8-STABLE after applicable evidence is accumulated; only that decision can produce the final PASS."
   },
   "allowedStatuses": [
     "NOT_STARTED",
@@ -30,7 +35,7 @@
     "completed": 99
   },
   "prerequisiteSemantics": "Stage dependencies govern gate completion. Individual tasks can start only according to tasks.md and their own accepted prerequisites; early independent drafting does not close a later stage.",
-  "releaseSemantics": "M8 and task 9.15 complete only after M8-STABLE PASS; BETA PASS does not assert publication or close the task.",
+  "releaseSemantics": "M8 and task 9.15 complete only after the single M8-STABLE manual PASS; RC and BETA are evidence checkpoints and never authorize publication or paid-Beta release during collection.",
   "stages": [
     {
       "stageId": "M0",
@@ -302,7 +307,6 @@
         "internal/evidence/acceptance/M5/m5-current-20261029/record.json",
         "internal/evidence/acceptance/M5/m5-current-20261029/README.md",
         "internal/evidence/acceptance/stripe-test-pack-20261029/RUN.md",
-        "internal/evidence/acceptance/stripe-test-pack-20261029/billing-readback-prepay.sanitized.json",
         "internal/evidence/acceptance/aipc-local-55432-20261029/README.md",
         "internal/evidence/acceptance/M5/m5-sandbox-20261022/record.json",
         "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md",
@@ -316,9 +320,7 @@
         "internal/evidence/acceptance/M5/m5-sandbox-20261022/candidate/digest-footprints.json",
         "internal/evidence/acceptance/M5/m5-local-fixtures-20261017/record.json",
         "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
-        "internal/evidence/M5/m5-local-fixtures-20261017/coverage.json",
-        "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md",
-        "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md"
+        "internal/evidence/M5/m5-local-fixtures-20261017/coverage.json"
       ],
       "reviewDecision": {
         "decision": "NOT_RUN",
@@ -328,7 +330,7 @@
         "integratorDecision": "NOT_RUN",
         "integratorId": null,
         "decidedAt": null,
-        "reason": "Fixture-only local billing probes and fake-provider Stripe suites were rerun on disposable PostgreSQL. The earlier 21/1 refund log remains a retained failure; a later 22/22 fake-provider rerun closes the local defect only. Embedded test-mode pack payment is PASS_paid_and_reconciled. Authenticated desktop owner billing and member-denial UI observations are recorded; mobile layout is not proven. In-process refund-command replay passes with zero provider calls on replay, but no hosted refund of the unused pack was performed. Hosted Checkout URL completion, hosted owner-command replay, the $25 subscription, hosted refunds, live Stripe, FirstPromoter, current M3 equivalence, and independent M5 review remain open. M5 stays IN_PROGRESS.",
+        "reason": "Fixture-only local billing probes were rerun at 2026-10-29T05:39Z. Schema, Checkout, reconciliation, fake-provider Stripe Checkout, reconciliation, inbox, and billing presentation passed. An aipc Docker Postgres fixture archive records additional credit and billing probe exits of 0 and does not close M5. Stripe refunds integration remains 21 pass and 1 fail and is not PASS. Defect M5-LOCAL-REFUND-STEPUP-20261029 stays OPEN. The hosted Stripe test-mode acceptance-pack embedded payment is PASS_paid_and_reconciled at internal/evidence/acceptance/stripe-test-pack-20261029/ and does not close M5. Hosted Checkout Session URLs, owner-command replay, authenticated billing UI, the $25 subscription, refunds, live charges, FirstPromoter, and independent review remain open. Current M3 applicability is STALE.",
         "taskReviewRef": "internal/evidence/acceptance/M5/m5-current-20261029/record.json",
         "recordRef": "internal/evidence/acceptance/M5/m5-current-20261029/record.json"
       }
@@ -545,7 +547,7 @@
       "candidateId": "working-tree-20261022-current-r5",
       "status": "IN_PROGRESS",
       "recordRef": "internal/evidence/acceptance/M3/working-tree-20261022-current-r5/record.json",
-      "reason": "All current technical and browser evidence passes; independent reviewer and integrator remain open."
+      "reason": "All current technical and browser evidence passes; the current record remains evidence-only and the single M8-STABLE manual decision is deferred."
     }
   ]
 }
