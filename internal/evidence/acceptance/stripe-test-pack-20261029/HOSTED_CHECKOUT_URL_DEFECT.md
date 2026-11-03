@@ -18,3 +18,6 @@ Checkout Sessions created with `ui_mode=hosted_page` return a `url` (~443 chars)
 
 ## Follow-up
 Prefer fixing stripe-test adapter / account onboarding so hosted Checkout URLs work, or switch acceptance path to embedded_page end-to-end in the product UI.
+
+## Staging product path (2026-10-30)
+Hosted Checkout remains an incomplete URL on this Stripe account. The product path is now `embedded_page` mount verified on Staging after PR #7: `MOUNT_OK` in `EMBEDDED_CHECKOUT_MOUNT.md` (Pay not clicked; not an M5 stage PASS).
