@@ -1,0 +1,14 @@
+﻿{
+  "recordedAt": "2026-11-03T16:16:00+08:00",
+  "timezone": "Asia/Shanghai",
+  "source": "Stripe API accounts.retrieve (sandbox/test)",
+  "accountId": "acct_1USYQxRcvKApiJYW",
+  "flags": {
+    "details_submitted": false,
+    "charges_enabled": false,
+    "payouts_enabled": false,
+    "tos_acceptance": null,
+    "disabled_reason": "requirements.pending_verification"
+  },
+  "secrets": "none included"
+}

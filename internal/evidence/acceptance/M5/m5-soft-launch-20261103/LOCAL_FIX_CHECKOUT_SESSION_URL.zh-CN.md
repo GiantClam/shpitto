@@ -1,12 +1,13 @@
-﻿# Checkout Session URL — 本机修改计划（步骤 1–2 本机已改代码；未部署未复验）
+﻿# Checkout Session URL — 本机修改计划（步骤 1–2 已合入 Staging tip 29816c2；Staging 应用路径仍待复验）
 
 日期（Asia/Shanghai）：2026-11-03  
 依据：`CHECKOUT_SESSION_URL_PLAN.md`、`internal/evidence/acceptance/stripe-test-pack-20261029/HOSTED_CHECKOUT_URL_DEFECT.md`  
 用户决策：修好跳转链接后再验（不做“只走 embedded”书面例外）。
 
-**当前状态：本机 adapter 代码已按步骤 1–2 改完（见 `CODE_CHANGE_NOTE.md`）；未部署、未复验。禁止声称 Session URL 已通。M5 仍 IN_PROGRESS。**
+**当前状态（2026-11-03 Asia/Shanghai 更新）：** 步骤 1–2 代码已合入 `main` tip `29816c283450260cff9ac05e206ddbfc9b2b9e07`（PR #10 squash）并部署 Staging web SUCCESS（deployment `81fa8c1f…`，约 16:16–16:17）。API 直建 hosted Session（`cs_test_a1BRjBZ7…`）浏览器探测为 `PASS_probe_card_form`（出卡表单，非 incomplete），尽管账号仍 `details_submitted=false`。**Staging 应用侧 Session URL / UI handoff 路径仍 PENDING。** Soft-launch Session URL 项仅可记 probe-pass（API hosted），**未关单**。禁止把 M5 / acceptance-status 写成 PASS。证据：`session-url-probe-20261103/`。
 
 ---
+
 
 ## 1. 问题一句话
 

@@ -1,4 +1,4 @@
-# CODE_CHANGE_NOTE — Checkout Session URL local adapter support
+﻿# CODE_CHANGE_NOTE — Checkout Session URL local adapter support
 
 日期（Asia/Shanghai）：2026-11-03  
 机器：aipc（本地编辑，未 commit / 未 push / 未部署）
@@ -34,3 +34,7 @@
 1. Stripe Dashboard（test）完成账户入驻至 `details_submitted=true`
 2. Staging 设置 `STRIPE_CHECKOUT_UI_MODE=hosted`（或按发布流程注入）并部署本机改动
 3. 打开返回的 `checkout.stripe.com` Session URL：应出卡表单（不是 incomplete）→ 测试卡对账 → 再归档
+
+## Deploy note（2026-11-03 Asia/Shanghai）
+
+代码已随 PR #10 squash 合入 `main` `29816c28` 并部署 Staging。API hosted Session URL 浏览器探测见 `session-url-probe-20261103/`（`PASS_probe_card_form`）。Staging 应用 handoff 仍 PENDING；M5 仍 IN_PROGRESS；勿把 acceptance-status 写成 PASS。

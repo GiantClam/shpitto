@@ -1,0 +1,21 @@
+﻿{
+  "recordedAt": "2026-11-03T16:17:00+08:00",
+  "timezone": "Asia/Shanghai",
+  "source": "Stripe API checkout.sessions.create (hosted_page probe; not Staging app handoff)",
+  "priceId": "price_1USZScRcvKApiJYWdi3iaGxJ",
+  "amountUsd": 9,
+  "session": {
+    "id": "cs_test_a1BRjBZ7BtzOsemENBNU2tB4DqBvahDeAxKjNyVxpr1k0rf8uzzcBRYTkl",
+    "urlHost": "checkout.stripe.com",
+    "ui_mode": "hosted_page",
+    "status": "open",
+    "client_secret": null
+  },
+  "browserProbe": {
+    "result": "PASS_probe_card_form",
+    "saw": ["Sandbox product $9.00", "Contact/Email", "Payment method Card/Cash App/Klarna/Bank", "Pay button"],
+    "didNotSee": ["This link is incomplete"],
+    "paymentCompleted": false
+  },
+  "secrets": "none included; full checkout URL omitted"
+}
