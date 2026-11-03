@@ -319,9 +319,39 @@ test('historical hosted Checkout can be read back without becoming an embedded c
     assert.equal(result.value.clientSecret, null);
   }
   client.checkout.sessions.create = async () => ({...session(), ui_mode: 'hosted_page', url: 'https://checkout.stripe.com/c/pay/cs_test_UnitSession', client_secret: null});
-  assert.equal((await adapter().createCheckout(checkoutInput())).status, 'failed');
+  const createdHosted = await adapter().createCheckout(checkoutInput());
+  assert.equal(createdHosted.status, 'succeeded');
+  if (createdHosted.status === 'succeeded') {
+    assert.equal(createdHosted.value.url, 'https://checkout.stripe.com/c/pay/cs_test_UnitSession');
+    assert.equal(createdHosted.value.clientSecret, null);
+  }
 });
 
+test('checkoutUiMode hosted creates hosted_page sessions with success and cancel urls', async () => {
+  const {client, calls} = harness();
+  const adapter = () => createStripeTestAdapter({secretKey, appUrl, portalConfigurationId: 'bpc_UnitConfig', client, checkoutUiMode: 'hosted'});
+  const hostedSession = {...session(), ui_mode: 'hosted_page', url: 'https://checkout.stripe.com/c/pay/cs_test_UnitSession', client_secret: null};
+  client.checkout.sessions.create = async (...args) => {calls.push({method: 'checkout.create', args}); return hostedSession;};
+  const result = await adapter().createCheckout(checkoutInput());
+  assert.equal(result.status, 'succeeded');
+  if (result.status !== 'succeeded') return;
+  assert.equal(result.value.url, 'https://checkout.stripe.com/c/pay/cs_test_UnitSession');
+  assert.equal(result.value.clientSecret, null);
+  const call = calls.find((item) => item.method === 'checkout.create')!;
+  const params = call.args[0] as Record<string, unknown>;
+  assert.equal(params.ui_mode, 'hosted_page');
+  assert.equal(params.redirect_on_completion, undefined);
+  assert.equal(params.return_url, undefined);
+  const successUrl = new URL(params.success_url as string);
+  assert.equal(successUrl.origin, appUrl);
+  assert.equal(successUrl.pathname, `/workspaces/${workspaceId}/billing`);
+  assert.equal(successUrl.searchParams.get('checkout'), 'success');
+  assert.equal(successUrl.searchParams.get('session_id'), '{CHECKOUT_SESSION_ID}');
+  const cancelUrl = new URL(params.cancel_url as string);
+  assert.equal(cancelUrl.origin, appUrl);
+  assert.equal(cancelUrl.pathname, `/workspaces/${workspaceId}/billing`);
+  assert.equal(cancelUrl.searchParams.get('checkout'), 'cancel');
+});
 test('completed unpaid and expired Checkout readbacks are successful observations without payment claims', async () => {
   const {client, adapter} = harness();
   for (const status of ['complete', 'expired']) {
