@@ -7,6 +7,7 @@ export type StripeTestConfiguration = Readonly<{
   portalConfigurationId: string;
   publishableKey: string | null;
   appUrl: string;
+  checkoutUiMode: 'hosted' | 'embedded';
   catalog: readonly BillingCatalogSnapshot[];
 }>;
 
@@ -14,6 +15,7 @@ export type StripeTestConfiguration = Readonly<{
 export function parseStripeTestConfiguration(input: Readonly<{
   driver: string; runtimeProfile: string; secretKey: string; webhookSecret: string;
   portalConfigurationId: string; appUrl: string; catalogJson: string; publishableKey: string;
+  checkoutUiMode?: string;
 }>): StripeTestConfiguration | null {
   if (!input.driver || input.driver === 'fixture') return null;
   if (input.driver !== 'stripe_test' || input.runtimeProfile !== 'acceptance' || !/^sk_test_[A-Za-z0-9]+$/.test(input.secretKey)) {
@@ -38,5 +40,6 @@ export function parseStripeTestConfiguration(input: Readonly<{
   if (catalog.some(product => product.provider !== 'stripe') || new Set(catalog.map(product => product.productKey)).size !== catalog.length || new Set(catalog.map(product => product.priceReference)).size !== catalog.length) {
     throw new DomainError('VALIDATION', 'Stripe test products and price references must be unique and server-bound.');
   }
-  return Object.freeze({secretKey: input.secretKey, webhookSecret: input.webhookSecret, portalConfigurationId: input.portalConfigurationId, publishableKey: publishableKey || null, appUrl: origin.origin, catalog: Object.freeze(catalog)});
+  const checkoutUiMode = typeof input.checkoutUiMode === 'string' && input.checkoutUiMode.trim().toLowerCase() === 'hosted' ? 'hosted' as const : 'embedded' as const;
+  return Object.freeze({secretKey: input.secretKey, webhookSecret: input.webhookSecret, portalConfigurationId: input.portalConfigurationId, publishableKey: publishableKey || null, appUrl: origin.origin, checkoutUiMode, catalog: Object.freeze(catalog)});
 }

@@ -45,8 +45,15 @@ test('the bridge maps a completed paid Checkout to a terminal paid observation',
   assert.deepEqual(await provider.createCheckout({} as never), {sessionId: 'cs_test_a', url: null, clientSecret: null, status: 'paid', completed: true});
 });
 
-test('a hosted url without a client secret is not a usable new Checkout', async () => {
+test('hosted Checkout exposes the session url without a client secret', async () => {
   const provider = createStripeCheckoutProvider(adapter());
+  assert.deepEqual(await provider.createCheckout({} as never), {sessionId: 'cs_test_a', url: 'https://checkout.stripe.com/test', clientSecret: null, status: 'open'});
+});
+
+test('open Checkout without client secret or url stays unknown', async () => {
+  const provider = createStripeCheckoutProvider(adapter({
+    createCheckout: async () => ({status: 'succeeded', value: {sessionId: 'cs_test_a', status: 'open', paymentStatus: 'unpaid', url: null, clientSecret: null}}),
+  }));
   assert.deepEqual(await provider.createCheckout({} as never), {unknown: true, sessionId: 'cs_test_a'});
 });
 

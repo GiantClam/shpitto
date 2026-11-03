@@ -17,6 +17,9 @@ test('explicit acceptance test catalog is immutable and binds real price identit
   assert.equal(config?.catalog[0]?.provider, 'stripe');
   assert.equal(config?.catalog[0]?.priceReference, 'price_TestMonthly');
   assert.equal(config?.publishableKey, null);
+  assert.equal(config?.checkoutUiMode, 'embedded');
+  assert.equal(parseStripeTestConfiguration({...input(), checkoutUiMode: 'hosted'})?.checkoutUiMode, 'hosted');
+  assert.equal(parseStripeTestConfiguration({...input(), checkoutUiMode: 'EMBEDDED'})?.checkoutUiMode, 'embedded');
   assert.equal(parseStripeTestConfiguration({...input(), publishableKey: 'pk_test_ExampleOnly'})?.publishableKey, 'pk_test_ExampleOnly');
   assert.ok(Object.isFrozen(config));
   assert.ok(Object.isFrozen(config?.catalog));

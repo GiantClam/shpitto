@@ -78,7 +78,7 @@ export type StripeTestRefundResult = StripeTestProblem | Readonly<{
   status: 'pending' | 'failed' | 'succeeded'; refundId: string; paymentIntentId: string; customerId: string;
   amountMinor: string; currency: string; providerStatus: 'pending' | 'requires_action' | 'failed' | 'canceled' | 'succeeded';
 }>;
-export type StripeTestAdapterConfig = Readonly<{secretKey: string; appUrl: string; portalConfigurationId?: string; client?: StripeTestClient}>;
+export type StripeTestAdapterConfig = Readonly<{secretKey: string; appUrl: string; portalConfigurationId?: string; checkoutUiMode?: 'hosted' | 'embedded'; client?: StripeTestClient}>;
 
 class AdapterFault extends Error {
   readonly problem: StripeTestProblem;
@@ -244,7 +244,8 @@ function checkoutValue(session: Session, input: StripeTestCheckoutInput, session
   const embedded = session.ui_mode === 'embedded_page';
   const hosted = session.ui_mode === 'hosted_page' || session.ui_mode == null;
   if (!embedded && !hosted) throw new AdapterFault('unrecognized_response', 'unknown');
-  if (creating) requireValue(embedded);
+  // Creating may be embedded_page (default) or hosted_page when STRIPE_CHECKOUT_UI_MODE=hosted.
+  if (creating) requireValue(embedded || hosted);
   const clientSecret = checkoutClientSecret(session);
   const hostedUrl = session.url ? providerUrl(session.url, 'checkout.stripe.com') : null;
   // Embedded sessions must not hand the browser a hosted Checkout URL. Those links stay incomplete
@@ -286,14 +287,16 @@ function refundValue(refund: Refund, input: StripeTestRefundInput, refundId?: st
  * authorization, ledger, environment, persistence or automatic retry authority. Reuse the exact key
  * and parameters only within the caller's approved retry window. Persist returned IDs for readback.
  * Lookup scans at most ten pages of 100 records and never creates missing objects. Unknown is not
- * evidence of absence. New Checkout sessions use embedded_page and return a client secret for
- * Stripe.js Embedded Checkout. Historical hosted session URLs, when read back, must still use
- * checkout.stripe.com. Portal URLs support billing.stripe.com only.
+ * evidence of absence. New Checkout sessions default to embedded_page (client secret for
+ * Stripe.js Embedded Checkout). Pass checkoutUiMode: 'hosted' (from STRIPE_CHECKOUT_UI_MODE via env config)
+ * for hosted_page success/cancel URLs. Historical hosted session URLs, when read back, must still use checkout.stripe.com.
+ * Portal URLs support billing.stripe.com only.
  */
 export function createStripeTestAdapter(config: StripeTestAdapterConfig) {
   if (typeof config.secretKey !== 'string' || !/^(sk|rk)_test_[A-Za-z0-9]+$/.test(config.secretKey)) throw new TypeError('A Stripe test secret key is required.');
   const origin = appOrigin(config.appUrl);
   const configurationId = config.portalConfigurationId;
+  const checkoutUiMode = config.checkoutUiMode === 'hosted' ? 'hosted' : 'embedded';
   if (configurationId !== undefined && !/^bpc_[A-Za-z0-9]+$/.test(configurationId)) throw new TypeError('A valid Stripe test portal configuration is required.');
   const client: StripeTestClient = config.client ?? new Stripe(config.secretKey, {apiVersion: STRIPE_TEST_API_VERSION, maxNetworkRetries: 0, timeout: 20_000});
   const returnUrl = (workspaceId: string) => new URL(`/workspaces/${encodeURIComponent(workspaceId)}/billing`, origin).toString();
@@ -351,11 +354,23 @@ export function createStripeTestAdapter(config: StripeTestAdapterConfig) {
         const input = checkoutInput(raw);
         await verifyCheckout(input, true);
         const metadata = checkoutMetadata(input);
+        const destination = returnUrl(input.workspaceId);
+        const hosted = checkoutUiMode === 'hosted';
         const params: Stripe.Checkout.SessionCreateParams = {
           customer: input.customerId, client_reference_id: input.attemptId, mode: input.catalog.kind === 'pack' ? 'payment' : 'subscription',
           line_items: [{price: input.catalog.priceReference, quantity: 1}], metadata,
           ...(input.catalog.kind === 'pack' ? {payment_intent_data: {metadata}} : {subscription_data: {metadata}}),
-          ui_mode: 'embedded_page', redirect_on_completion: 'always', return_url: `${returnUrl(input.workspaceId)}?checkout=return&session_id={CHECKOUT_SESSION_ID}`,
+          ...(hosted
+            ? {
+              ui_mode: 'hosted_page',
+              success_url: `${destination}?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
+              cancel_url: `${destination}?checkout=cancel`,
+            }
+            : {
+              ui_mode: 'embedded_page',
+              redirect_on_completion: 'always',
+              return_url: `${destination}?checkout=return&session_id={CHECKOUT_SESSION_ID}`,
+            }),
           allow_promotion_codes: false, automatic_tax: {enabled: false}, adaptive_pricing: {enabled: false}, expand: ['line_items.data.price'],
         };
         return Object.freeze({status: 'succeeded', value: Object.freeze(checkoutValue(await client.checkout.sessions.create(params, {idempotencyKey: input.idempotencyKey}), input, undefined, true))});

@@ -31,8 +31,10 @@ export function createStripeCheckoutProvider(adapter: StripeTestAdapter): Billin
       const value = result.value;
       if (value.status === 'complete' && value.paymentStatus === 'paid') return {sessionId: value.sessionId, url: null, clientSecret: null, status: 'paid' as const, completed: true};
       if (value.status === 'expired') return {sessionId: value.sessionId, url: null, clientSecret: null, status: 'expired' as const};
-      if (value.status !== 'open' || !value.clientSecret) return {unknown: true as const, sessionId: value.sessionId};
-      return {sessionId: value.sessionId, url: null, clientSecret: value.clientSecret, status: 'open' as const};
+      if (value.status !== 'open') return {unknown: true as const, sessionId: value.sessionId};
+      if (value.clientSecret) return {sessionId: value.sessionId, url: null, clientSecret: value.clientSecret, status: 'open' as const};
+      if (value.url) return {sessionId: value.sessionId, url: value.url, clientSecret: null, status: 'open' as const};
+      return {unknown: true as const, sessionId: value.sessionId};
     },
     async retrieveCheckout(input) {
       const result = await adapter.retrieveCheckout(input);
