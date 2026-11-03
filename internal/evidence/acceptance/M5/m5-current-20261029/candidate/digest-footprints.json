@@ -17,8 +17,8 @@
     },
     {
       "path": ".gitignore",
-      "bytes": 2482,
-      "sha256": "511f360c1f9be1ffd0859d897fc0428b94e1989901e2ee454be2d4645081de53"
+      "bytes": 2373,
+      "sha256": "3985eb16bea4e405661d0c52cc2eac91ade045f28dfc86586e17e6d0c93412f8"
     },
     {
       "path": ".shpitto/contracts/change-manifest.json",
@@ -32,8 +32,8 @@
     },
     {
       "path": ".shpitto/contracts/export-manifest.json",
-      "bytes": 2385,
-      "sha256": "bd64406e7be22da011fa01a84047eb299085e83d55c645efed4b5dd2d44cd2bd"
+      "bytes": 2294,
+      "sha256": "a39f6f18e3b0eee66f757abc5c010b2ba1baa69dd6629d9c06fd07b8f49d7a00"
     },
     {
       "path": ".shpitto/contracts/extensions.json",
@@ -227,8 +227,8 @@
     },
     {
       "path": "deploy/railway.provider-worker.json",
-      "bytes": 399,
-      "sha256": "4e806ffd069afe837051fe92edb3d1cdfc3dee14c53902604d5d09ea7b876048"
+      "bytes": 385,
+      "sha256": "39380d5047fe2d09841b29165741c96e09c29a1683124475b0fc890611b16cfc"
     },
     {
       "path": "deploy/railway.recovery-monitor.json",
@@ -287,8 +287,8 @@
     },
     {
       "path": "pnpm-workspace.yaml",
-      "bytes": 597,
-      "sha256": "db5d6fbfe0a354e7e4f784d80bd1ad009887f39c61637a7350525c68b496210f"
+      "bytes": 586,
+      "sha256": "2a2a38ca97322a49d331e1976712a8c3e0424b54c3bb176732bc9113bdca5364"
     },
     {
       "path": "scripts/candidate-digests.mjs",
@@ -1957,8 +1957,8 @@
     },
     {
       "path": "src/db/migrations/0026_provider_tracking_urls.sql",
-      "bytes": 726,
-      "sha256": "7123d1a1923fdc3168c3997b177c47077ef7484c6758893e32d18b5302adb446"
+      "bytes": 725,
+      "sha256": "726102f3c6009b581272aef687c00d0e1f2914932b976f0782fe888bb7d4806b"
     },
     {
       "path": "src/db/migrations/0027_recovery_heartbeat.sql",
@@ -2797,8 +2797,8 @@
     },
     {
       "path": "tests/unit/asset-cleanup-trigger.test.ts",
-      "bytes": 3210,
-      "sha256": "cc1d4f9f16f244f079b92defd3eb083a8de92b611d6296ab6f453b72a2e23125"
+      "bytes": 3209,
+      "sha256": "ddb6a7375e47a57204b5a6027c7d44da1d61f1127ecb05b4af855e38e5d7e545"
     },
     {
       "path": "tests/unit/assets-authorization.test.ts",
@@ -2892,8 +2892,8 @@
     },
     {
       "path": "tests/unit/optional-affiliate-env.test.ts",
-      "bytes": 1564,
-      "sha256": "dd632d2df95e1958de3b5812c2fcf7970073ad038539e2823b8f323dad32aee8"
+      "bytes": 1540,
+      "sha256": "d09bb091bcf535e2b0f485958db706355d2dca0c86ae1632547f02d94c3c2be7"
     },
     {
       "path": "tests/unit/optional-provider-env.test.ts",
@@ -3037,8 +3037,8 @@
     },
     {
       "path": "tsconfig.json",
-      "bytes": 843,
-      "sha256": "f277e9a4078fb21e2fe4b3b44ca0209ca0023a2bad701cbf83abf43431de8fe5"
+      "bytes": 842,
+      "sha256": "ef52472dc34d8e867cf99f9728351916e37d8c4918243b1ba8958b72e5445f6a"
     }
   ],
   "schema": [
@@ -3189,8 +3189,8 @@
     },
     {
       "path": "src/db/migrations/0026_provider_tracking_urls.sql",
-      "bytes": 726,
-      "sha256": "7123d1a1923fdc3168c3997b177c47077ef7484c6758893e32d18b5302adb446"
+      "bytes": 725,
+      "sha256": "726102f3c6009b581272aef687c00d0e1f2914932b976f0782fe888bb7d4806b"
     },
     {
       "path": "src/db/migrations/0027_recovery_heartbeat.sql",
@@ -3336,8 +3336,8 @@
     },
     {
       "path": "deploy/railway.provider-worker.json",
-      "bytes": 399,
-      "sha256": "4e806ffd069afe837051fe92edb3d1cdfc3dee14c53902604d5d09ea7b876048"
+      "bytes": 385,
+      "sha256": "39380d5047fe2d09841b29165741c96e09c29a1683124475b0fc890611b16cfc"
     },
     {
       "path": "deploy/worker.Dockerfile",
@@ -3356,8 +3356,8 @@
     },
     {
       "path": "pnpm-workspace.yaml",
-      "bytes": 597,
-      "sha256": "db5d6fbfe0a354e7e4f784d80bd1ad009887f39c61637a7350525c68b496210f"
+      "bytes": 586,
+      "sha256": "2a2a38ca97322a49d331e1976712a8c3e0424b54c3bb176732bc9113bdca5364"
     },
     {
       "path": "scripts/provider-worker-preflight.ts",
@@ -3401,8 +3401,8 @@
     },
     {
       "path": "tsconfig.json",
-      "bytes": 843,
-      "sha256": "f277e9a4078fb21e2fe4b3b44ca0209ca0023a2bad701cbf83abf43431de8fe5"
+      "bytes": 842,
+      "sha256": "ef52472dc34d8e867cf99f9728351916e37d8c4918243b1ba8958b72e5445f6a"
     }
   ],
   "contract": [
@@ -3418,8 +3418,8 @@
     },
     {
       "path": ".shpitto/contracts/export-manifest.json",
-      "bytes": 2385,
-      "sha256": "bd64406e7be22da011fa01a84047eb299085e83d55c645efed4b5dd2d44cd2bd"
+      "bytes": 2294,
+      "sha256": "a39f6f18e3b0eee66f757abc5c010b2ba1baa69dd6629d9c06fd07b8f49d7a00"
     },
     {
       "path": ".shpitto/contracts/extensions.json",
@@ -3503,8 +3503,8 @@
     },
     {
       "path": "internal/restart/external-inputs.json",
-      "bytes": 12144,
-      "sha256": "1f8803ec85230ed082b74b0b85696d6835f71841d7dfe104c50c134c62ed864a"
+      "bytes": 11973,
+      "sha256": "c10eb719f9ee383d8f6e30b9def5cea6e5d7928671ad5cb4ca1da33de2d27158"
     },
     {
       "path": "internal/restart/integration-matrix.md",
@@ -3573,8 +3573,8 @@
     },
     {
       "path": "openspec/changes/restart-shpitto-video-saas/specs/provider-integrations/spec.md",
-      "bytes": 12780,
-      "sha256": "77c70ba24839f4b814cd9f4860a88ecbaae4d62f4f4c3f3feb4227ec674ae2f9"
+      "bytes": 12655,
+      "sha256": "095a977eb56c5f68153adc8eab3cd2a08f314c886a63657a1adcb27cab080061"
     },
     {
       "path": "openspec/changes/restart-shpitto-video-saas/specs/restart-foundation/spec.md",
@@ -4410,8 +4410,8 @@
     },
     {
       "path": "tests/unit/asset-cleanup-trigger.test.ts",
-      "bytes": 3210,
-      "sha256": "cc1d4f9f16f244f079b92defd3eb083a8de92b611d6296ab6f453b72a2e23125"
+      "bytes": 3209,
+      "sha256": "ddb6a7375e47a57204b5a6027c7d44da1d61f1127ecb05b4af855e38e5d7e545"
     },
     {
       "path": "tests/unit/assets-authorization.test.ts",
@@ -4505,8 +4505,8 @@
     },
     {
       "path": "tests/unit/optional-affiliate-env.test.ts",
-      "bytes": 1564,
-      "sha256": "dd632d2df95e1958de3b5812c2fcf7970073ad038539e2823b8f323dad32aee8"
+      "bytes": 1540,
+      "sha256": "d09bb091bcf535e2b0f485958db706355d2dca0c86ae1632547f02d94c3c2be7"
     },
     {
       "path": "tests/unit/optional-provider-env.test.ts",

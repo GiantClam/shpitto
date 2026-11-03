@@ -8,7 +8,7 @@
   "status": "IN_PROGRESS",
   "candidateId": "m4-current-20261029",
   "createdAt": "2026-10-29T04:05:00.000Z",
-  "updatedAt": "2026-10-29T16:57:11.549Z",
+  "updatedAt": "2026-11-03T08:10:02.129Z",
   "policy": {
     "path": "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md",
     "sha256": "3e31e7cb16379171305c558b80dddb930b26fbfa46147cc0d5c6aa319ef64a40"
@@ -26,14 +26,14 @@
     }
   ],
   "candidate": {
-    "capturedAt": "2026-11-03T07:56:41.684Z",
-    "sourceCommit": "84a5433e0a053486e7d7a381f6079d98e36e6a2b",
+    "capturedAt": "2026-11-03T08:10:02.129Z",
+    "sourceCommit": "c2aa0a7a9b5ae9498db901732cf60032556f47ea",
     "dirtyPatchSha256": null,
-    "sourceTreeSha256": "26e455abb48b13046cd83758d5c81b4b1a12387805028ba6becd10e086ddf155",
-    "schemaSha256": "157cf1aaf3163e450262a0016240622edc8be62277f8907fcf327cf3893d01f2",
-    "configurationSha256": "1b23b6ae0b907ef718a85218b88e9848e2aad30d8bf95b2a0cdb4e233721aedc",
-    "contractSha256": "8c0a023d32c00ab569e0798e655ff63866fdf63d4fcd425d1afe65c5fb0746a8",
-    "validatorSha256": "cd11e93ae4c99e113666f0136ee91ccf28e7ee9e7060d97b991db3228a936bc3",
+    "sourceTreeSha256": "6b674605961475c2e2e5e6d42babd19f78d8189c278a8f5504515f8bbb675fe6",
+    "schemaSha256": "db21b40ab33bcbac245b616474d5603aa5ee074ba82a0e41b80c93861f2d43c4",
+    "configurationSha256": "0a1cf1a81438ac46e4bc47566962488dec88aabefcb6694f9d3e57e3ac1d5c80",
+    "contractSha256": "22dd3c65af54b9276d6796a6d1096d035eb11b088a94610befa23ff7543cdc58",
+    "validatorSha256": "6d3efa8b25125c64039ce22cb69e157bf71d60260b117231fcd1cd0c75a9ea27",
     "lockfileSha256": "a75db59723c866636d370d21e20eec1b86d5281810749331504ae42d3f043bee",
     "digestAlgorithm": "SHA-256 of sorted relative-path\\0byte-size\\0file-digest entries joined with LF; lockfile is raw byte SHA-256",
     "digestInputs": {
@@ -1296,12 +1296,12 @@
     "Candidate digest refreshed after CI and OpenSpec verification tooling changes. This development record remains IN_PROGRESS and does not constitute stage approval."
   ],
   "candidateRefresh": {
-    "capturedAt": "2026-10-29T16:57:11.549Z",
+    "capturedAt": "2026-11-03T08:10:02.129Z",
     "candidateId": "m4-current-20261029",
-    "source": "GitHub PR #7 merge-ref archive capture after retargeting PR #7 to main using scripts/candidate-digests.mjs canonical digest inputs",
+    "source": "git archive HEAD (LF Git blob bytes) via scripts/candidate-digests.mjs; Windows worktree CRLF rejected",
     "status": "CURRENT_BYTES_CAPTURED_IN_PROGRESS",
     "fullStageAcceptance": false,
-    "sourceCommit": "ed1071a732f1066afd4fdacb8a41fa33e75eae43"
+    "sourceCommit": "c2aa0a7a9b5ae9498db901732cf60032556f47ea"
   },
   "commandEvidenceApplicability": {
     "currentExecutionCommandIds": [

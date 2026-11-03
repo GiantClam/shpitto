@@ -1,14 +1,14 @@
 {
-  "comparedWith": "m5-current-20261029/candidate/candidate-before-6a017f1b.json",
+  "comparedWith": "m5-current-20261029/candidate/candidate-before-lf-rebind-20261103.json",
   "previousDigests": {
-    "capturedAt": "2026-10-29T07:44:34.564Z",
-    "sourceCommit": "f59f1f094dab084374331de9ad2b7a6fb7ed081e",
+    "capturedAt": "2026-11-03T07:56:41.684Z",
+    "sourceCommit": "84a5433e0a053486e7d7a381f6079d98e36e6a2b",
     "dirtyPatchSha256": null,
-    "sourceTreeSha256": "bf491d2dfb3c6260e89a4db2c07220cef98fa4ac3e162d9890a085c6294532ca",
-    "schemaSha256": "db21b40ab33bcbac245b616474d5603aa5ee074ba82a0e41b80c93861f2d43c4",
-    "configurationSha256": "ce96987b2cd7fb4821f36de2e05ba80455a37b566d77ca343f9320d55e56bb59",
-    "contractSha256": "6acfb80fc1a8d6b4dc0f699f1c3d5280a0b44905c1eff6a0b199c19adad601ac",
-    "validatorSha256": "75f77bdd963c83e06ad2c1b8033838d3c38bd0726c06b8bd383ad462a9e47a73",
+    "sourceTreeSha256": "26e455abb48b13046cd83758d5c81b4b1a12387805028ba6becd10e086ddf155",
+    "schemaSha256": "157cf1aaf3163e450262a0016240622edc8be62277f8907fcf327cf3893d01f2",
+    "configurationSha256": "1b23b6ae0b907ef718a85218b88e9848e2aad30d8bf95b2a0cdb4e233721aedc",
+    "contractSha256": "8c0a023d32c00ab569e0798e655ff63866fdf63d4fcd425d1afe65c5fb0746a8",
+    "validatorSha256": "cd11e93ae4c99e113666f0136ee91ccf28e7ee9e7060d97b991db3228a936bc3",
     "lockfileSha256": "a75db59723c866636d370d21e20eec1b86d5281810749331504ae42d3f043bee",
     "digestAlgorithm": "SHA-256 of sorted relative-path\\0byte-size\\0file-digest entries joined with LF; lockfile is raw byte SHA-256",
     "digestInputs": {
@@ -77,14 +77,14 @@
     }
   },
   "currentDigests": {
-    "capturedAt": "2026-10-29T16:57:11.549Z",
-    "sourceCommit": "ed1071a732f1066afd4fdacb8a41fa33e75eae43",
+    "capturedAt": "2026-11-03T08:10:02.129Z",
+    "sourceCommit": "c2aa0a7a9b5ae9498db901732cf60032556f47ea",
     "dirtyPatchSha256": null,
-    "sourceTreeSha256": "04c76ff70237d162a3154360fe92cc7273c266b9155dbc81c0037910966117bf",
+    "sourceTreeSha256": "6b674605961475c2e2e5e6d42babd19f78d8189c278a8f5504515f8bbb675fe6",
     "schemaSha256": "db21b40ab33bcbac245b616474d5603aa5ee074ba82a0e41b80c93861f2d43c4",
-    "configurationSha256": "9f7eae51ae4819c717c3243b2b869156de5149484daa70ad259dba57b1c47af1",
-    "contractSha256": "64a37e1dc089372f0177d144ea8f2f2489c4a0ba3e75abe5bd6adc215f14514b",
-    "validatorSha256": "8ddcc13f1a33b4c31407f297f5944b4d25528b3f19aec342e12bca0ece42639a",
+    "configurationSha256": "0a1cf1a81438ac46e4bc47566962488dec88aabefcb6694f9d3e57e3ac1d5c80",
+    "contractSha256": "22dd3c65af54b9276d6796a6d1096d035eb11b088a94610befa23ff7543cdc58",
+    "validatorSha256": "6d3efa8b25125c64039ce22cb69e157bf71d60260b117231fcd1cd0c75a9ea27",
     "lockfileSha256": "a75db59723c866636d370d21e20eec1b86d5281810749331504ae42d3f043bee",
     "digestAlgorithm": "SHA-256 of sorted relative-path\\0byte-size\\0file-digest entries joined with LF; lockfile is raw byte SHA-256",
     "digestInputs": {
@@ -152,7 +152,7 @@
       ]
     }
   },
-  "changedEntryCount": 36,
+  "changedEntryCount": 5,
   "changedEntries": [
     "configuration:.env.example",
     "configuration:.github/workflows/verify-root.yml",
@@ -191,5 +191,12 @@
     "validator:tests/unit/stripe-test-config.test.ts",
     "validator:tooling/root-dependency-baseline.json"
   ],
-  "refreshReason": "Rebound to the exact GitHub PR #7 merge ref after retargeting PR #7 to main."
+  "refreshReason": "Rebind development current-candidate digests to LF git-archive bytes after Windows CRLF refresh (c2aa0a7a) failed GitHub Actions verify on pull/10/merge",
+  "changedDigestKeys": [
+    "sourceTreeSha256",
+    "schemaSha256",
+    "configurationSha256",
+    "contractSha256",
+    "validatorSha256"
+  ]
 }
