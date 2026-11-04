@@ -1722,7 +1722,7 @@
       ]
     },
     "hostedSubscription25CancelAtPeriodEnd": {
-      "status": "STRIPE_SIDE_DONE_APP_REFLECTION_UNVERIFIED",
+      "status": "VERIFIED_api_cancel_app_reflected",
       "scenario": "SC-BIL-09",
       "scenarioStatus": "BLOCKED",
       "performedAt": "2026-11-04T15:06:31+08:00",
@@ -1731,11 +1731,13 @@
       "cancelAtPeriodEnd": true,
       "cancelAt": 1796265232,
       "eventId": "evt_1UXyHERcvKApiJYWnYFvNc13",
-      "note": "Stripe-side cancel_at_period_end set via API; app mirror/UI not yet read back; portal owner path, credit expiry, Checkout guard and price-change checks not done. Does not change stage status.",
+      "note": "Stripe-side cancel_at_period_end set via API; app billing UI reflects Cancellation at period end, period end Dec 3 2026, monthly grant 1000 expiry unchanged (superadmin read-only readback 2026-11-04 ~15:08+08:00). Owner portal path, Checkout guard and price-change checks not done; no audit row seen for the event. Does not change stage status.",
       "evidenceRefs": [
         "internal/evidence/acceptance/M5/m5-soft-launch-20261103/subscription-25-cancel-at-period-end-20261104/STATUS.md",
         "internal/evidence/acceptance/M5/m5-soft-launch-20261103/subscription-25-cancel-at-period-end-20261104/raw/stripe-subscription-after-cancel.json",
-        "internal/evidence/acceptance/M5/m5-soft-launch-20261103/subscription-25-cancel-at-period-end-20261104/raw/stripe-event-subscription-updated.json"
+        "internal/evidence/acceptance/M5/m5-soft-launch-20261103/subscription-25-cancel-at-period-end-20261104/raw/stripe-event-subscription-updated.json",
+        "internal/evidence/acceptance/M5/m5-soft-launch-20261103/subscription-25-cancel-at-period-end-20261104/screenshots/billing.png",
+        "internal/evidence/acceptance/M5/m5-soft-launch-20261103/subscription-25-cancel-at-period-end-20261104/screenshots/admin-subscription.png"
       ]
     },
     "billingReturnScreenshot": {

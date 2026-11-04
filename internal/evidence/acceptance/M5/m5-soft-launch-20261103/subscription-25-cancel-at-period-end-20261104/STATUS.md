@@ -1,7 +1,7 @@
 # SC-BIL-09 cancel-at-period-end on $25 subscription — 2026-11-04
 
 - account: Stripe sandbox acct_1USYQxRcvKApiJYW, livemode=false (TEST only, no charge)
-- status: STRIPE_SIDE_DONE_APP_REFLECTION_UNVERIFIED
+- status: VERIFIED_api_cancel_app_reflected (API-initiated cancel; owner portal path still unproven)
 - SC-BIL-09: BLOCKED (not met). m5: IN_PROGRESS (not a stage PASS)
 
 ## Method (deviation)
@@ -14,11 +14,14 @@
 - No new invoice/charge; latest_invoice still in_1UXXXoRcvKApiJYWcxmgVlPK
 - event evt_1UXyHERcvKApiJYWnYFvNc13 customer.subscription.updated (request req_bMahS0Fifqe5op); pending_webhooks 2 -> 1 on re-read. Staging endpoint we_1UU8YPRcvKApiJYWVwQBqFcw subscribed; per-endpoint delivery not visible via MCP.
 
-## App reflection: NOT VERIFIED
-- No unauthenticated readable API/DB path from this run. Needs UI readback: Staging billing page (expect "Cancellation at period end") and/or /admin workspace details section=subscriptions (cancelAtPeriodEnd=true), plus webhook event row for evt_1UXyHERcvKApiJYWnYFvNc13.
-
+## App reflection: VERIFIED (superadmin, read-only, 2026-11-04 ~15:08 Asia/Kuala_Lumpur)
+- Billing page /workspaces/ab0d1ea5-f538-4b4b-8c59-698b5d7c5d39/billing: Subscriptions (1) "active / Cancellation at period end", "Current period ends Dec 3, 2026".
+- Monthly subscription grant 1000 credits, Available 1000, "Expires Dec 3, 2026" (credit expiry unchanged).
+- Payment history: monthly USD 25 paid, 0 refunded. Recovery: Clear.
+- Admin: no subscription detail view; admin billing lists the orders. First audit page has no entry for evt_1UXyHERcvKApiJYWnYFvNc13 (app may not audit subscription.updated); webhook row not directly observed.
+- Screenshots: screenshots/billing.png, screenshots/admin-subscription.png
 ## Still required for SC-BIL-09
-- owner cancel via portal; app reflection; credits keep original expiry; immediate/scheduled price change unavailable; new subscription purchase blocked by Checkout guard until prior ends; catalog edits do not migrate existing customers.
+- owner cancel via portal; (credit expiry unchanged observed for this API cancel); immediate/scheduled price change unavailable; new subscription purchase blocked by Checkout guard until prior ends; catalog edits do not migrate existing customers.
 
 ## Raw
 - raw/stripe-subscription-after-cancel.json
