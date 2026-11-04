@@ -1721,6 +1721,23 @@
         "internal/evidence/acceptance/M5/m5-soft-launch-20261103/subscription-25-readback-20261104/raw/stripe-payment-intent.json"
       ]
     },
+    "hostedSubscription25CancelAtPeriodEnd": {
+      "status": "STRIPE_SIDE_DONE_APP_REFLECTION_UNVERIFIED",
+      "scenario": "SC-BIL-09",
+      "scenarioStatus": "BLOCKED",
+      "performedAt": "2026-11-04T15:06:31+08:00",
+      "method": "stripe_api_direct (not owner portal)",
+      "subscriptionId": "sub_1UXXXpRcvKApiJYW5NlKrZys",
+      "cancelAtPeriodEnd": true,
+      "cancelAt": 1796265232,
+      "eventId": "evt_1UXyHERcvKApiJYWnYFvNc13",
+      "note": "Stripe-side cancel_at_period_end set via API; app mirror/UI not yet read back; portal owner path, credit expiry, Checkout guard and price-change checks not done. Does not change stage status.",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M5/m5-soft-launch-20261103/subscription-25-cancel-at-period-end-20261104/STATUS.md",
+        "internal/evidence/acceptance/M5/m5-soft-launch-20261103/subscription-25-cancel-at-period-end-20261104/raw/stripe-subscription-after-cancel.json",
+        "internal/evidence/acceptance/M5/m5-soft-launch-20261103/subscription-25-cancel-at-period-end-20261104/raw/stripe-event-subscription-updated.json"
+      ]
+    },
     "billingReturnScreenshot": {
       "path": "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png",
       "observed": "The page is signed out and shows Sign in to view billing. It does not show the paid order or grant.",
