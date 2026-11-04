@@ -21,6 +21,7 @@ export type SubscriptionObservation = Readonly<{
   periodStart?: Date | null;
   periodEnd?: Date | null;
   cancelAtPeriodEnd?: boolean;
+  cancelAt?: Date | null;
   now?: Date;
   fence?: ReconciliationFence;
   /** Required to establish a new Stripe lifecycle binding before its first paid invoice. */
@@ -45,6 +46,7 @@ export async function mirrorSubscription(db: AppDatabase, input: SubscriptionObs
   if (catalog.provider !== input.provider || catalog.kind !== 'subscription') throw new DomainError('CONFLICT', 'Subscription catalog does not match the provider or product kind.');
   const now = input.now ?? new Date();
   const {periodStart, periodEnd} = period(input.periodStart, input.periodEnd);
+  if (input.cancelAt && !Number.isFinite(input.cancelAt.getTime())) throw new DomainError('VALIDATION', 'Subscription cancellation date is invalid.');
   const result = await inTransaction(db, async (tx) => {
     if (input.provider === 'stripe') await consumeReconciliationFence(tx, input.workspaceId, input.fence, now);
     else {
@@ -78,11 +80,13 @@ export async function mirrorSubscription(db: AppDatabase, input: SubscriptionObs
       if (existingCatalog.snapshotHash !== catalog.snapshotHash) throw new DomainError('CONFLICT', 'Subscription catalog terms are immutable for an existing subscription.');
       const effectivePeriodStart = input.provider === 'stripe' && periodStart && periodEnd && (!existing.periodEnd || periodEnd > existing.periodEnd) ? periodStart : existing.periodStart ?? periodStart;
       const effectivePeriodEnd = existing.periodEnd && periodEnd ? (periodEnd > existing.periodEnd ? periodEnd : existing.periodEnd) : (existing.periodEnd ?? periodEnd);
-      await tx.update(billingSubscriptions).set({status: input.status, periodStart: effectivePeriodStart, periodEnd: effectivePeriodEnd, cancelAtPeriodEnd: input.cancelAtPeriodEnd ?? existing.cancelAtPeriodEnd, updatedAt: now}).where(eq(billingSubscriptions.id, existing.id));
-      return {...existing, status: input.status, periodStart: effectivePeriodStart, periodEnd: effectivePeriodEnd, cancelAtPeriodEnd: input.cancelAtPeriodEnd ?? existing.cancelAtPeriodEnd, updatedAt: now};
+      const nextCancelAtPeriodEnd = input.cancelAtPeriodEnd ?? existing.cancelAtPeriodEnd;
+      const nextCancelAt = input.cancelAt !== undefined ? input.cancelAt : existing.cancelAt;
+      await tx.update(billingSubscriptions).set({status: input.status, periodStart: effectivePeriodStart, periodEnd: effectivePeriodEnd, cancelAtPeriodEnd: nextCancelAtPeriodEnd, cancelAt: nextCancelAt, updatedAt: now}).where(eq(billingSubscriptions.id, existing.id));
+      return {...existing, status: input.status, periodStart: effectivePeriodStart, periodEnd: effectivePeriodEnd, cancelAtPeriodEnd: nextCancelAtPeriodEnd, cancelAt: nextCancelAt, updatedAt: now};
     }
     const id = crypto.randomUUID();
-    await tx.insert(billingSubscriptions).values({id, workspaceId: input.workspaceId, provider: input.provider, customerId, externalId, catalogSnapshot: catalog, status: input.status, periodStart, periodEnd, cancelAtPeriodEnd: input.cancelAtPeriodEnd ?? false, createdAt: now, updatedAt: now});
+    await tx.insert(billingSubscriptions).values({id, workspaceId: input.workspaceId, provider: input.provider, customerId, externalId, catalogSnapshot: catalog, status: input.status, periodStart, periodEnd, cancelAtPeriodEnd: input.cancelAtPeriodEnd ?? false, cancelAt: input.cancelAt ?? null, createdAt: now, updatedAt: now});
     const inserted = (await tx.select().from(billingSubscriptions).where(eq(billingSubscriptions.id, id)).limit(1))[0];
     if (!inserted) throw new DomainError('INFRASTRUCTURE', 'Subscription was not persisted.');
     return inserted;
@@ -98,7 +102,7 @@ export async function markSubscriptionCanceled(db: AppDatabase, input: Readonly<
     const rows = await tx.select().from(billingSubscriptions).where(and(eq(billingSubscriptions.workspaceId, input.workspaceId), eq(billingSubscriptions.provider, input.provider), eq(billingSubscriptions.externalId, input.externalId))).for('update').limit(1);
     const subscription = rows[0];
     if (!subscription) throw new DomainError('NOT_FOUND', 'Subscription was not found.');
-    await tx.update(billingSubscriptions).set({status: 'canceled', cancelAtPeriodEnd: false, updatedAt: now}).where(eq(billingSubscriptions.id, subscription.id));
-    return {...subscription, status: 'canceled' as const, cancelAtPeriodEnd: false, updatedAt: now};
+    await tx.update(billingSubscriptions).set({status: 'canceled', cancelAtPeriodEnd: false, cancelAt: null, updatedAt: now}).where(eq(billingSubscriptions.id, subscription.id));
+    return {...subscription, status: 'canceled' as const, cancelAtPeriodEnd: false, cancelAt: null, updatedAt: now};
   });
 }

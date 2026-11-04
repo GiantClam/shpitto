@@ -126,6 +126,38 @@ test('historical bound subscription renews and mirrors after current customer re
   assert.equal((await rows('credit_grants', f.workspaceId)).length, 2);
 });
 
+test('subscription cancellation timestamps mirror, clear, and disappear at terminal cancellation', async () => {
+  const f = await fixture();
+  await apply(f.input);
+  const readPersisted = async () => (await pool.query<{status: string; cancel_at_period_end: boolean; cancel_at: Date | null}>('select status, cancel_at_period_end, cancel_at from app.billing_subscriptions where workspace_id=$1', [f.workspaceId])).rows[0]!;
+  const cancelAt = new Date('2026-11-20T00:00:00Z');
+  const first = new Date(now.getTime() + 1000);
+  const scheduledFence = await claimReconciliation(db, {workspaceId: f.workspaceId, owner: 'schedule-cancel', now: first});
+  const scheduled = await mirrorSubscription(db, {workspaceId: f.workspaceId, provider: 'stripe', externalId: f.input.externalSubscriptionId!, customerId: f.customerId, catalogSnapshot: f.snapshot, status: 'active', cancelAtPeriodEnd: true, cancelAt, fence: scheduledFence, now: first});
+  assert.equal(scheduled?.cancelAtPeriodEnd, true);
+  assert.equal(scheduled?.cancelAt?.toISOString(), cancelAt.toISOString());
+  let persisted = await readPersisted();
+  assert.equal(persisted.cancel_at_period_end, true);
+  assert.equal(persisted.cancel_at!.toISOString(), cancelAt.toISOString());
+
+  const second = new Date(first.getTime() + 1000);
+  const clearedFence = await claimReconciliation(db, {workspaceId: f.workspaceId, owner: 'clear-cancel', now: second});
+  const cleared = await mirrorSubscription(db, {workspaceId: f.workspaceId, provider: 'stripe', externalId: f.input.externalSubscriptionId!, customerId: f.customerId, catalogSnapshot: f.snapshot, status: 'active', cancelAtPeriodEnd: false, cancelAt: null, fence: clearedFence, now: second});
+  assert.equal(cleared?.cancelAtPeriodEnd, false);
+  assert.equal(cleared?.cancelAt, null);
+  persisted = await readPersisted();
+  assert.equal(persisted.cancel_at_period_end, false);
+  assert.equal(persisted.cancel_at, null);
+
+  const third = new Date(second.getTime() + 1000);
+  const canceledFence = await claimReconciliation(db, {workspaceId: f.workspaceId, owner: 'terminal-cancel', now: third});
+  await markSubscriptionCanceled(db, {workspaceId: f.workspaceId, provider: 'stripe', externalId: f.input.externalSubscriptionId!, fence: canceledFence, now: third});
+  persisted = await readPersisted();
+  assert.equal(persisted.status, 'canceled');
+  assert.equal(persisted.cancel_at_period_end, false);
+  assert.equal(persisted.cancel_at, null);
+});
+
 test('missing service period is a durable hold with no grant, never a perpetual subscription grant', async () => {
   const f = await fixture();
   assert.equal((await apply({...f.input, periodEnd: undefined})).status, 'held');

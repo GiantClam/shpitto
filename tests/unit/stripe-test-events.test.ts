@@ -35,7 +35,7 @@ function harness(kind: 'pack' | 'subscription' = 'pack') {
   const refund = {id: 're_Mapper', charge: 'ch_Mapper', payment_intent: 'pi_Mapper', customer: customerId, status: 'succeeded', amount: 100, currency: 'usd', created: end, metadata};
   const dispute = {id: 'du_Mapper', livemode: false, charge: 'ch_Mapper', payment_intent: 'pi_Mapper' as string | null, status: 'needs_response', amount: 100, currency: 'usd', created: end, metadata};
   const item = {id: 'si_Mapper', subscription: 'sub_Mapper', price, quantity: 1, current_period_start: start, current_period_end: end, discounts: [], tax_rates: []};
-  const subscription = {id: 'sub_Mapper', livemode: false, customer: customerId, status: 'active', cancel_at_period_end: true, automatic_tax: {enabled: false}, default_tax_rates: [], discounts: [], items: {has_more: false, data: [item]}, metadata};
+  const subscription = {id: 'sub_Mapper', livemode: false, customer: customerId, status: 'active', cancel_at_period_end: true, cancel_at: null as number | null, automatic_tax: {enabled: false}, default_tax_rates: [], discounts: [], items: {has_more: false, data: [item]}, metadata};
   const invoiceLine = {id: 'il_Mapper', invoice: 'in_Mapper', livemode: false, subscription: 'sub_Mapper' as string | null, currency: 'usd', amount: 900, subtotal: 900, quantity: 1, quantity_decimal: '1', pricing: {type: 'price_details' as const, price_details: {price: 'price_Mapper'}, unit_amount_decimal: '900'}, parent: {type: 'subscription_item_details', subscription_item_details: {subscription: 'sub_Mapper', subscription_item: 'si_Mapper', proration: false}}, period: {start, end}, discounts: [], discount_amounts: [], pretax_credit_amounts: [], taxes: []};
   const invoicePayment = {id: 'inpay_Mapper', invoice: 'in_Mapper', livemode: false, status: 'paid', amount_paid: 900, currency: 'usd', payment: {type: 'payment_intent', payment_intent: 'pi_Mapper'}};
   const invoice = {id: 'in_Mapper', livemode: false, customer: customerId, status: 'paid', billing_reason: 'subscription_create', currency: 'usd', amount_paid: 900, amount_due: 900, amount_remaining: 0, amount_paid_off_stripe: 0, total: 900, subtotal: 900, starting_balance: 0, ending_balance: 0, pre_payment_credit_notes_amount: 0, post_payment_credit_notes_amount: 0, automatic_tax: {enabled: false}, default_tax_rates: [], discounts: [], total_discount_amounts: [], total_taxes: [], parent: {type: 'subscription_details', subscription_details: {subscription: 'sub_Mapper'}}, payments: {data: [invoicePayment], has_more: false}, lines: {data: [invoiceLine], has_more: false}, status_transitions: {paid_at: start}, metadata};
@@ -403,7 +403,28 @@ test('subscription lifecycle normalization is separate and cannot emit a cash ob
   assert.equal(observation!.externalId, 'sub_Mapper');
   assert.equal(observation!.status, 'active');
   assert.equal(observation!.cancelAtPeriodEnd, true);
+  assert.equal(observation!.cancelAt, null);
   assert.equal(observation!.periodEnd!.toISOString(), '2026-02-28T12:00:00.000Z');
+});
+
+test('portal-style cancel_at schedules cancellation even when cancel_at_period_end is false', async () => {
+  const h = harness('subscription');
+  h.subscription.cancel_at_period_end = false;
+  h.subscription.cancel_at = h.item.current_period_end;
+  const discovery = await h.mapper.discover(event('customer.subscription.updated', 'subscription', 'sub_Mapper'));
+  const observation = await h.mapper.normalizeSubscription(discovery, binding('subscription'), fence);
+  assert.equal(observation!.cancelAtPeriodEnd, true);
+  assert.equal(observation!.cancelAt!.toISOString(), new Date(h.subscription.cancel_at * 1000).toISOString());
+});
+
+test('clearing cancel_at un-schedules cancellation', async () => {
+  const h = harness('subscription');
+  h.subscription.cancel_at_period_end = false;
+  h.subscription.cancel_at = null;
+  const discovery = await h.mapper.discover(event('customer.subscription.updated', 'subscription', 'sub_Mapper'));
+  const observation = await h.mapper.normalizeSubscription(discovery, binding('subscription'), fence);
+  assert.equal(observation!.cancelAtPeriodEnd, false);
+  assert.equal(observation!.cancelAt, null);
 });
 
 for (const type of ['charge.dispute.created', 'charge.dispute.updated', 'charge.dispute.closed']) {
