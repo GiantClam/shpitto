@@ -82,7 +82,9 @@ export default async function BillingPage({params}: {params: Promise<{w: string}
             {view.subscriptions.map((subscription) => <article className="task-row" key={subscription.id}>
               <div>
                 <strong>{subscription.status}</strong>
-                <small>{subscription.cancelAtPeriodEnd ? 'Cancellation at period end' : 'No scheduled cancellation'}</small>
+                <small>{subscription.cancelAtPeriodEnd
+                  ? subscription.cancelAt ? `Cancellation scheduled ${formatDate(subscription.cancelAt)}` : 'Cancellation at period end'
+                  : 'No scheduled cancellation'}</small>
               </div>
               <div className="task-meta"><small>Current period ends {formatDate(subscription.periodEnd)}</small></div>
             </article>)}
