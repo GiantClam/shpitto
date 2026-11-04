@@ -1,0 +1,38 @@
+{
+  "source": "Stripe MCP stripe_api_read GetCheckoutSessionsSession + GetEvents(type=checkout.session.completed)",
+  "account": "acct_1USYQxRcvKApiJYW (shpitto-acceptance-20261020 sandbox)",
+  "livemode": false,
+  "readAt": "2026-11-04T14:50+08:00",
+  "session": {
+    "id": "cs_test_a1Vo4XFZCVRdfeeufzyJlZ4MTR8ZnYGfv2TZFiJboXpFHNOR7sEBRgqZcy",
+    "ui_mode": "hosted_page",
+    "mode": "payment",
+    "status": "complete",
+    "payment_status": "paid",
+    "amount_subtotal": 900,
+    "amount_total": 900,
+    "currency": "usd",
+    "created": 1793774733,
+    "customer": "cus_VY6rr4nkmOawCO",
+    "client_reference_id": "3d10d90d-e3cb-4382-8478-d77f5073ff2d",
+    "payment_intent": "pi_3UXxycRcvKApiJYW0UtHUSZ7",
+    "success_url": "https://shpitto-m4-web-production.up.railway.app/workspaces/ab0d1ea5-f538-4b4b-8c59-698b5d7c5d39/billing?checkout=success&session_id={CHECKOUT_SESSION_ID}",
+    "cancel_url": "https://shpitto-m4-web-production.up.railway.app/workspaces/ab0d1ea5-f538-4b4b-8c59-698b5d7c5d39/billing?checkout=cancel",
+    "metadata": {
+      "attemptId": "3d10d90d-e3cb-4382-8478-d77f5073ff2d",
+      "catalogHash": "b6bfb6297c034d9a4fe368a2485f5bcf7b5d994c2d10ef53d70b129a2f151011",
+      "customerId": "cus_VY6rr4nkmOawCO",
+      "idempotencyKey": "checkout:3d10d90d-e3cb-4382-8478-d77f5073ff2d",
+      "productKey": "acceptance-pack",
+      "workspaceId": "ab0d1ea5-f538-4b4b-8c59-698b5d7c5d39"
+    }
+  },
+  "event": {
+    "id": "evt_1UXxydRcvKApiJYWxbVWAA2f",
+    "type": "checkout.session.completed",
+    "created": 1793774839,
+    "api_version": "2026-09-30.endive",
+    "pending_webhooks_at_read": 1,
+    "note": "pending_webhooks=1 is also shown on earlier completed events that the app did fulfill; app-side fulfillment is evidenced by billing UI readback (new paid order + 250 grant). Per-endpoint delivery attempts not exposed via MCP read."
+  }
+}

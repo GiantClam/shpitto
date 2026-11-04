@@ -1,0 +1,16 @@
+{
+  "source": "Browser readback of Staging billing page (UI only; no DB/API readback performed)",
+  "observedAt": "2026-11-04T14:46+08:00",
+  "url": "https://shpitto-m4-web-production.up.railway.app/workspaces/ab0d1ea5-f538-4b4b-8c59-698b5d7c5d39/billing?checkout=success&session_id=cs_test_a1Vo4XFZCVRdfeeufzyJlZ4MTR8ZnYGfv2TZFiJboXpFHNOR7sEBRgqZcy",
+  "path": "billing -> Permanent credit pack USD 9.00 -> Open checkout -> checkout.stripe.com (Sandbox) -> test card 4242, no 3DS",
+  "before": { "orders": 2, "totalAvailableCredits": 1000, "monthlyCredits": 1000 },
+  "after": {
+    "orders": 3,
+    "newOrderRow": { "label": "Credit pack · paid", "cashPaid": "USD 9.00", "refunded": "0.00" },
+    "newPermanentGrant": { "credits": 250, "state": "Available" },
+    "totalAvailableCredits": 1250,
+    "monthlyCredits": 1000
+  },
+  "orderId": "NOT_DISCOVERED_UI_ONLY",
+  "grantId": "NOT_DISCOVERED_UI_ONLY"
+}

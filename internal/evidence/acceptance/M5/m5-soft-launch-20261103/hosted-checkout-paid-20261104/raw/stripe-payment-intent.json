@@ -1,0 +1,29 @@
+{
+  "source": "Stripe MCP stripe_api_read GetPaymentIntentsIntent expand=latest_charge (client_secret, receipt_url omitted)",
+  "account": "acct_1USYQxRcvKApiJYW",
+  "livemode": false,
+  "paymentIntent": {
+    "id": "pi_3UXxycRcvKApiJYW0UtHUSZ7",
+    "status": "succeeded",
+    "amount": 900,
+    "amount_received": 900,
+    "currency": "usd",
+    "created": 1793774838,
+    "customer": "cus_VY6rr4nkmOawCO",
+    "order_reference": "cs_test_a1Vo4XFZCVRdfeeufzyJlZ4MTR8ZnYGfv2TZFiJboXpFHNOR7sEBRgqZcy",
+    "metadata_productKey": "acceptance-pack"
+  },
+  "latestCharge": {
+    "id": "ch_3UXxycRcvKApiJYW0camvJ9j",
+    "status": "succeeded",
+    "paid": true,
+    "captured": true,
+    "amount": 900,
+    "amount_captured": 900,
+    "amount_refunded": 0,
+    "refunded": false,
+    "balance_transaction": "txn_3UXxycRcvKApiJYW0L0DSPcS",
+    "card": { "brand": "visa", "last4": "4242", "funding": "credit", "three_d_secure": null },
+    "outcome": { "type": "authorized", "network_status": "approved_by_network", "risk_level": "normal" }
+  }
+}

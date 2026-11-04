@@ -1671,9 +1671,25 @@
       "SHPITTO_ACCEPTANCE_BOOTSTRAP_RESEED": "off"
     },
     "hostedCheckoutSessionUrl": {
-      "status": "NOT_PASS",
-      "symptom": "This link is incomplete",
-      "note": "Payment Links and embedded Checkout work on this test account. Hosted Checkout Session URLs do not."
+      "status": "PASS_paid_and_reconciled",
+      "previousStatus": "NOT_PASS",
+      "previousSymptom": "This link is incomplete",
+      "verifiedAt": "2026-11-04T14:46+08:00",
+      "sessionId": "cs_test_a1Vo4XFZCVRdfeeufzyJlZ4MTR8ZnYGfv2TZFiJboXpFHNOR7sEBRgqZcy",
+      "sessionStatus": "complete",
+      "paymentStatus": "paid",
+      "paymentIntentId": "pi_3UXxycRcvKApiJYW0UtHUSZ7",
+      "chargeId": "ch_3UXxycRcvKApiJYW0camvJ9j",
+      "webhookEventId": "evt_1UXxydRcvKApiJYWxbVWAA2f",
+      "orderId": "NOT_DISCOVERED_UI_ONLY",
+      "grantId": "NOT_DISCOVERED_UI_ONLY",
+      "note": "Staging app path hosted Checkout paid with test card 4242; UI shows new paid order USD 9.00 and 250 permanent grant. This pack is UNUSED and is the candidate for SC-BIL-11 hosted full refund (not refunded). Does not change stage status.",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M5/m5-soft-launch-20261103/hosted-checkout-paid-20261104/STATUS.md",
+        "internal/evidence/acceptance/M5/m5-soft-launch-20261103/hosted-checkout-paid-20261104/raw/stripe-session.json",
+        "internal/evidence/acceptance/M5/m5-soft-launch-20261103/hosted-checkout-paid-20261104/raw/stripe-payment-intent.json",
+        "internal/evidence/acceptance/M5/m5-soft-launch-20261103/hosted-checkout-paid-20261104/raw/billing-ui-readback.json"
+      ]
     },
     "billingReturnScreenshot": {
       "path": "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png",
