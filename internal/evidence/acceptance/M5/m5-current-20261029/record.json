@@ -1696,6 +1696,31 @@
         "internal/evidence/acceptance/M5/m5-soft-launch-20261103/hosted-checkout-paid-20261104/raw/billing-ui-readback.json"
       ]
     },
+    "hostedSubscription25": {
+      "status": "VERIFIED_purchase_readback",
+      "verifiedAt": "2026-11-04T15:10+08:00",
+      "subscriptionId": "sub_1UXXXpRcvKApiJYW5NlKrZys",
+      "subscriptionStatus": "active",
+      "customerId": "cus_VY6rr4nkmOawCO",
+      "priceId": "price_1USZScRcvKApiJYWy4uFqr6f",
+      "amountMinor": "2500",
+      "currentPeriodStart": 1793673232,
+      "currentPeriodEnd": 1796265232,
+      "cancelAtPeriodEnd": false,
+      "latestInvoiceId": "in_1UXXXoRcvKApiJYWcxmgVlPK",
+      "latestInvoiceStatus": "paid",
+      "paymentIntentId": "pi_3UXXXoRcvKApiJYW0iTf5cZw",
+      "checkoutSessionId": "cs_test_a1XAPNWd58usVP1HwgKEz0kZQq4X7Laxic5FgngAEp2nPK4sdHnA0BAJdn",
+      "appOrderId": "bd57452a-e9c7-4fe5-9a9f-005b0289bb77",
+      "appGrantIdPrefix": "580828d5",
+      "note": "Purchase readback only. SC-BIL-07 and M5-C01 remain BLOCKED: cancel-at-period-end, payment-failure recovery and repurchase lifecycle not done. Does not change stage status.",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M5/m5-soft-launch-20261103/subscription-25-readback-20261104/STATUS.md",
+        "internal/evidence/acceptance/M5/m5-soft-launch-20261103/subscription-25-readback-20261104/raw/stripe-subscription.json",
+        "internal/evidence/acceptance/M5/m5-soft-launch-20261103/subscription-25-readback-20261104/raw/stripe-invoice.json",
+        "internal/evidence/acceptance/M5/m5-soft-launch-20261103/subscription-25-readback-20261104/raw/stripe-payment-intent.json"
+      ]
+    },
     "billingReturnScreenshot": {
       "path": "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png",
       "observed": "The page is signed out and shows Sign in to view billing. It does not show the paid order or grant.",
