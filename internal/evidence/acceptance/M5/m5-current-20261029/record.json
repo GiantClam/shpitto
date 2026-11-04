@@ -749,7 +749,7 @@
       ],
       "mandatory": true,
       "result": "BLOCKED",
-      "scope": "The full-unused test refund succeeded once and voided only its 250-credit grant; other refund and dispute profiles remain open. The scenario remains BLOCKED for full M5 acceptance. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The hosted Stripe test-mode acceptance-pack embedded payment and post-pay readback are recorded at internal/evidence/acceptance/stripe-test-pack-20261029/ and do not close this scenario. Hosted Checkout Session URLs, owner-command replay, authenticated billing UI, the $25 subscription, refunds, live Stripe charges, FirstPromoter account settlement and current M3 equivalence were not run and remain outside this result. Additional evidence: The full-unused test refund succeeded once and voided only its 250-credit grant; other refund and dispute profiles remain open. The scenario remains BLOCKED for full M5 acceptance. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The hosted Stripe test-mode acceptance-pack embedded payment and post-pay readback are recorded at internal/evidence/acceptance/stripe-test-pack-20261029/ and do not close this scenario. The signed-in owner billing page is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md and does not close this scenario. The member billing denial is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md and does not close this scenario. Hosted Checkout Session URLs, mobile layout, refund-command replay, the $25 subscription, refunds, live Stripe charges, FirstPromoter account settlement and current M3 equivalence were not closed and remain outside this result.",
+      "scope": "The full-unused test refund succeeded once and voided only its 250-credit grant; other refund and dispute profiles remain open. The scenario remains BLOCKED for full M5 acceptance. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The hosted Stripe test-mode acceptance-pack embedded payment and post-pay readback are recorded at internal/evidence/acceptance/stripe-test-pack-20261029/ and do not close this scenario. Hosted Checkout Session URLs, owner-command replay, authenticated billing UI, the $25 subscription, refunds, live Stripe charges, FirstPromoter account settlement and current M3 equivalence were not run and remain outside this result. Additional evidence: The full-unused test refund succeeded once and voided only its 250-credit grant; other refund and dispute profiles remain open. The scenario remains BLOCKED for full M5 acceptance. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The hosted Stripe test-mode acceptance-pack embedded payment and post-pay readback are recorded at internal/evidence/acceptance/stripe-test-pack-20261029/ and do not close this scenario. The signed-in owner billing page is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md and does not close this scenario. The member billing denial is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md and does not close this scenario. Hosted Checkout Session URLs, mobile layout, refund-command replay, the $25 subscription, refunds, live Stripe charges, FirstPromoter account settlement and current M3 equivalence were not closed and remain outside this result. Hosted evidence 2026-11-04: Staging hosted Checkout pack (order ff58ff4a-deb0-4e2e-8e41-9071e52dd34c) was fully refunded unused via /admin (full-unused, 900 minor), Stripe sandbox refund re_3UXxycRcvKApiJYW0Jz6dEB0 succeeded, charge amount_refunded=900, grant ac89b23f voided 250, credits 1250->1000, preserved pack untouched. This closes the hosted unused full-refund item only; partial/used refund and dispute profiles remain open, so the scenario stays BLOCKED.",
       "evidenceRefs": [
         "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
         "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-database-readback.json",
@@ -764,7 +764,12 @@
         "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-owner-signed-in.png",
         "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md",
         "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-member-denied.png",
-        "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md"
+        "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md",
+        "internal/evidence/acceptance/M5/m5-soft-launch-20261103/hosted-unused-pack-refund-20261104/STATUS.md",
+        "internal/evidence/acceptance/M5/m5-soft-launch-20261103/hosted-unused-pack-refund-20261104/raw/stripe-refund.json",
+        "internal/evidence/acceptance/M5/m5-soft-launch-20261103/hosted-unused-pack-refund-20261104/raw/stripe-charge.json",
+        "internal/evidence/acceptance/M5/m5-soft-launch-20261103/hosted-unused-pack-refund-20261104/raw/stripe-payment-intent.json",
+        "internal/evidence/acceptance/M5/m5-soft-launch-20261103/hosted-unused-pack-refund-20261104/raw/app-refund-command.json"
       ]
     },
     {
@@ -1681,8 +1686,8 @@
       "paymentIntentId": "pi_3UXxycRcvKApiJYW0UtHUSZ7",
       "chargeId": "ch_3UXxycRcvKApiJYW0camvJ9j",
       "webhookEventId": "evt_1UXxydRcvKApiJYWxbVWAA2f",
-      "orderId": "NOT_DISCOVERED_UI_ONLY",
-      "grantId": "NOT_DISCOVERED_UI_ONLY",
+      "orderId": "ff58ff4a-deb0-4e2e-8e41-9071e52dd34c",
+      "grantId": "ac89b23f-5556-4bc9-b760-ef5f2ca43733",
       "note": "Staging app path hosted Checkout paid with test card 4242; UI shows new paid order USD 9.00 and 250 permanent grant. This pack is UNUSED and is the candidate for SC-BIL-11 hosted full refund (not refunded). Does not change stage status.",
       "evidenceRefs": [
         "internal/evidence/acceptance/M5/m5-soft-launch-20261103/hosted-checkout-paid-20261104/STATUS.md",
@@ -1770,6 +1775,36 @@
         "mobile layout",
         "refund-command replay",
         "M5 stage PASS"
+      ]
+    },
+    "hostedUnusedPackRefund": {
+      "status": "VERIFIED_refunded_and_reconciled",
+      "scenario": "SC-BIL-11",
+      "closesHostedUnusedRefund": true,
+      "closesScenario": false,
+      "closesStage": false,
+      "verifiedAt": "2026-11-04T14:57+08:00",
+      "livemode": false,
+      "orderId": "ff58ff4a-deb0-4e2e-8e41-9071e52dd34c",
+      "grantId": "ac89b23f-5556-4bc9-b760-ef5f2ca43733",
+      "voidedCredits": 250,
+      "amountMinor": 900,
+      "previewReason": "full-unused",
+      "requestId": "e4068037-5669-44fb-bdf0-c943322eb524",
+      "commandKey": "13f1f6f3-8efb-45dc-bedd-0085a985643a",
+      "commandStatus": "confirmed",
+      "refundId": "re_3UXxycRcvKApiJYW0Jz6dEB0",
+      "refundStatus": "succeeded",
+      "chargeAmountRefunded": 900,
+      "creditsAvailableBefore": 1250,
+      "creditsAfter": 1000,
+      "preservedPackUntouched": true,
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M5/m5-soft-launch-20261103/hosted-unused-pack-refund-20261104/STATUS.md",
+        "internal/evidence/acceptance/M5/m5-soft-launch-20261103/hosted-unused-pack-refund-20261104/raw/stripe-refund.json",
+        "internal/evidence/acceptance/M5/m5-soft-launch-20261103/hosted-unused-pack-refund-20261104/raw/stripe-charge.json",
+        "internal/evidence/acceptance/M5/m5-soft-launch-20261103/hosted-unused-pack-refund-20261104/raw/stripe-payment-intent.json",
+        "internal/evidence/acceptance/M5/m5-soft-launch-20261103/hosted-unused-pack-refund-20261104/raw/app-refund-command.json"
       ]
     }
   }

@@ -1,0 +1,38 @@
+{
+  "verifiedAt": "2026-11-04T14:57+08:00",
+  "source": "Staging /admin Request refund (computerUse UI; values supplied by operator run)",
+  "workspaceId": "ab0d1ea5-f538-4b4b-8c59-698b5d7c5d39",
+  "orderId": "ff58ff4a-deb0-4e2e-8e41-9071e52dd34c",
+  "order": {
+    "paidMinorBefore": 900,
+    "refundedMinorAfter": 900
+  },
+  "grant": {
+    "id": "ac89b23f-5556-4bc9-b760-ef5f2ca43733",
+    "voidedCredits": 250
+  },
+  "preview": {
+    "reason": "full-unused",
+    "expectedVersion": 2,
+    "amountMinor": 900
+  },
+  "execute": {
+    "requestId": "e4068037-5669-44fb-bdf0-c943322eb524",
+    "commandKey": "13f1f6f3-8efb-45dc-bedd-0085a985643a",
+    "status": "confirmed",
+    "externalId": "re_3UXxycRcvKApiJYW0Jz6dEB0"
+  },
+  "credits": {
+    "availableBefore": 1250,
+    "availableAfter": 1000,
+    "monthlyGrant580828d5": 1000
+  },
+  "untouched": {
+    "preservedPack": [
+      "88e1b0a0",
+      "da90a49b",
+      "7f0a93a4"
+    ],
+    "olderRefund": "re_3UX0fc… unchanged"
+  }
+}

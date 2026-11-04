@@ -1,0 +1,23 @@
+{
+  "account": "acct_1USYQxRcvKApiJYW",
+  "livemode": false,
+  "source": "Stripe MCP stripe_api_read",
+  "retrievedAt": "2026-11-04T15:00+08:00",
+  "id": "re_3UXxycRcvKApiJYW0Jz6dEB0",
+  "object": "refund",
+  "amount": 900,
+  "currency": "usd",
+  "status": "succeeded",
+  "charge": "ch_3UXxycRcvKApiJYW0camvJ9j",
+  "payment_intent": "pi_3UXxycRcvKApiJYW0UtHUSZ7",
+  "created": 1793775447,
+  "balance_transaction": "txn_3UXxycRcvKApiJYW08AOsjXl",
+  "reason": null,
+  "metadata": {
+    "orderId": "ff58ff4a-deb0-4e2e-8e41-9071e52dd34c",
+    "requestId": "e4068037-5669-44fb-bdf0-c943322eb524",
+    "idempotencyKey": "refund:e4068037-5669-44fb-bdf0-c943322eb524",
+    "workspaceId": "ab0d1ea5-f538-4b4b-8c59-698b5d7c5d39",
+    "customerId": "cus_[redacted]"
+  }
+}

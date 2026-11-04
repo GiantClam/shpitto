@@ -1,0 +1,18 @@
+{
+  "account": "acct_1USYQxRcvKApiJYW",
+  "livemode": false,
+  "source": "Stripe MCP stripe_api_read",
+  "retrievedAt": "2026-11-04T15:00+08:00",
+  "id": "pi_3UXxycRcvKApiJYW0UtHUSZ7",
+  "amount": 900,
+  "amount_received": 900,
+  "status": "succeeded",
+  "latest_charge": "ch_3UXxycRcvKApiJYW0camvJ9j",
+  "checkoutSession": "cs_test_a1Vo4XFZCVRdfeeufzyJlZ4MTR8ZnYGfv2TZFiJboXpFHNOR7sEBRgqZcy",
+  "note": "PI status stays succeeded after refund (Stripe semantics); refund state is on charge/refund.",
+  "redacted": [
+    "client_secret",
+    "customer",
+    "payment_method"
+  ]
+}

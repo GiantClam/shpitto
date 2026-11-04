@@ -1,0 +1,32 @@
+{
+  "account": "acct_1USYQxRcvKApiJYW",
+  "livemode": false,
+  "source": "Stripe MCP stripe_api_read",
+  "retrievedAt": "2026-11-04T15:00+08:00",
+  "id": "ch_3UXxycRcvKApiJYW0camvJ9j",
+  "amount": 900,
+  "amount_captured": 900,
+  "amount_refunded": 900,
+  "refunded": true,
+  "paid": true,
+  "status": "succeeded",
+  "disputed": false,
+  "currency": "usd",
+  "payment_intent": "pi_3UXxycRcvKApiJYW0UtHUSZ7",
+  "card": {
+    "brand": "visa",
+    "last4": "4242",
+    "three_d_secure": null
+  },
+  "metadata": {
+    "productKey": "acceptance-pack",
+    "attemptId": "3d10d90d-e3cb-4382-8478-d77f5073ff2d",
+    "workspaceId": "ab0d1ea5-f538-4b4b-8c59-698b5d7c5d39"
+  },
+  "redacted": [
+    "billing_details",
+    "receipt_url",
+    "customer",
+    "payment_method"
+  ]
+}
