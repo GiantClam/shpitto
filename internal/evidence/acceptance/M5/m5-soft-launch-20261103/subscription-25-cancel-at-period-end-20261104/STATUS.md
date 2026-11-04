@@ -26,3 +26,9 @@
 ## Raw
 - raw/stripe-subscription-after-cancel.json
 - raw/stripe-event-subscription-updated.json
+## Checkout guard / price change (2026-11-04 15:10 Asia/Kuala_Lumpur, read-only)
+- UI: with sub active + cancel at period end, Monthly "Open checkout" (USD 25) is ENABLED with no message -> UI does NOT block repurchase. "Open billing portal" enabled. No cancel/resume buttons. Screenshot: screenshots/checkout-block.png
+- Price change: no plan/price-change control in UI -> "immediate/scheduled price change unavailable" observed in UI (portal config subscription_update disabled per unit tests; portal page itself not opened).
+- Server guard (code, not exercised): YES. src/modules/billing/checkout.ts:89-101 assertNoActiveSubscription throws CONFLICT "A nonterminal subscription already exists for this workspace." when billing_subscriptions has status in ACTIVE_SUBSCRIPTION_STATUSES (checkout.ts:20: incomplete, trialing, active, past_due, unpaid, paused), and CONFLICT for a pending recurring Checkout attempt (:100). Called from createCheckoutAttempt (:180) and openCheckout (:209) for catalog.kind=subscription. Guard is status-based; cancel_at_period_end keeps status active, so it should reject. Defense in depth: reconcile-payment.ts:192 and subscriptions.ts:64 check for another nonterminal subscription.
+- Not yet proven: clicking Open checkout on Staging returns the CONFLICT (needs a click readback; would not charge). UX gap: button enabled with no message.
+- SC-BIL-09 remains BLOCKED (owner portal cancel path, live guard rejection, catalog-edit non-migration not proven).
