@@ -38,3 +38,9 @@
 - Screenshot: screenshots/monthly-checkout-conflict.png
 - Criterion "new subscription purchase requires prior subscription to end / Checkout guard" = OBSERVED.
 - SC-BIL-09 remains BLOCKED for: owner portal cancel path; catalog edit not migrating existing customers.
+
+## Prep step: API un-cancel for owner-portal test (2026-11-04 15:12:50 Asia/Kuala_Lumpur)
+- Set cancel_at_period_end=false via Stripe API (TEST). Readback: status active, cancel_at null, canceled_at null; no new invoice/charge.
+- Event evt_1UXyNKRcvKApiJYWjCfrOqpX customer.subscription.updated (req_K2vsEXDp34qUGr).
+- App reflection of un-cancel not yet read back. Purpose: allow owner-portal cancel path test. SC-BIL-09 BLOCKED.
+- Raw: raw/stripe-subscription-uncancel.json
