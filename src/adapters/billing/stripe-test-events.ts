@@ -35,7 +35,7 @@ type Dispute = Pick<Stripe.Dispute, 'id' | 'livemode' | 'amount' | 'currency' | 
 type SubscriptionItem = Pick<Stripe.SubscriptionItem, 'id' | 'subscription' | 'quantity' | 'current_period_start' | 'current_period_end'> & Readonly<{
   price: Reference; discounts: readonly unknown[]; tax_rates: readonly unknown[] | null;
 }>;
-type Subscription = Pick<Stripe.Subscription, 'id' | 'livemode' | 'cancel_at_period_end'> & Readonly<{
+type Subscription = Pick<Stripe.Subscription, 'id' | 'livemode' | 'cancel_at_period_end' | 'cancel_at'> & Readonly<{
   customer: Reference; status: string; automatic_tax: Readonly<{enabled: boolean}>;
   default_tax_rates?: readonly unknown[] | null; discounts: readonly unknown[]; items: Page<SubscriptionItem>;
 }>;
@@ -484,10 +484,13 @@ export function createStripeTestEventMapper(client: StripeTestEventClient) {
     requireIdentity(bound && subscriptionSupported(subscription, price, binding.catalogSnapshot), 'Unsupported Stripe subscription terms require a reconciliation hold.');
     const statuses = ['incomplete', 'incomplete_expired', 'trialing', 'active', 'past_due', 'canceled', 'unpaid', 'paused'];
     requireIdentity(statuses.includes(subscription.status) && item && monthly(item.current_period_start, item.current_period_end), 'Unsupported Stripe subscription lifecycle or period.');
+    const cancelAt = subscription.cancel_at == null ? null : new Date(subscription.cancel_at * 1000);
+    requireIdentity(cancelAt === null || Number.isFinite(cancelAt.getTime()), 'Unsupported Stripe subscription cancellation date.');
     return {provider: 'stripe', workspaceId: binding.workspaceId, customerId: state.customerId, externalId: subscription.id,
       catalogSnapshot: binding.catalogSnapshot, status: subscription.status as SubscriptionObservation['status'],
       periodStart: new Date(item.current_period_start * 1000), periodEnd: new Date(item.current_period_end * 1000),
-      cancelAtPeriodEnd: subscription.cancel_at_period_end, checkoutSessionId: binding.checkoutSessionId, fence};
+      cancelAtPeriodEnd: subscription.cancel_at_period_end || cancelAt !== null, cancelAt,
+      checkoutSessionId: binding.checkoutSessionId, fence};
   }
 
   return Object.freeze({discoverIdentity, discover: discoverIdentity, normalize, normalizeSubscription});

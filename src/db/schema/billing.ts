@@ -82,6 +82,7 @@ export const billingSubscriptions = appSchema.table('billing_subscriptions', {
   periodStart: timestamp('period_start', {withTimezone: true}),
   periodEnd: timestamp('period_end', {withTimezone: true}),
   cancelAtPeriodEnd: boolean('cancel_at_period_end').notNull().default(false),
+  cancelAt: timestamp('cancel_at', {withTimezone: true}),
   createdAt: timestamp('created_at', {withTimezone: true}).notNull(),
   updatedAt: timestamp('updated_at', {withTimezone: true}).notNull(),
 }, (table) => ({
