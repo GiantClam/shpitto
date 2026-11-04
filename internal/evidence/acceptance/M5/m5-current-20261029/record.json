@@ -1727,7 +1727,8 @@
       "scenarioStatus": "BLOCKED",
       "performedAt": "2026-11-04T15:06:31+08:00",
       "method": "stripe_api_direct (not owner portal)",
-      "criteria": {"appReflectsCancelAtPeriodEnd": "OBSERVED", "creditExpiryUnchanged": "OBSERVED", "priceChangeUnavailableInUi": "OBSERVED", "checkoutGuardRejectsRepurchase": "OBSERVED", "ownerPortalCancel": "NOT_RUN", "catalogEditNoMigration": "NOT_RUN"},
+      "portalCancel": {"eventId": "evt_1UXyOjRcvKApiJYWsCPe2EWM", "stripeCancelAtPeriodEnd": false, "stripeCancelAt": 1796265232, "appShows": "No scheduled cancellation", "result": "APP_REFLECTION_FAIL", "cause": "stripe-test-events.ts:490 maps only cancel_at_period_end; portal sets cancel_at"},
+      "criteria": {"appReflectsCancelAtPeriodEnd": "OBSERVED", "creditExpiryUnchanged": "OBSERVED", "priceChangeUnavailableInUi": "OBSERVED", "checkoutGuardRejectsRepurchase": "OBSERVED", "ownerPortalCancel": "APP_REFLECTION_FAIL", "catalogEditNoMigration": "NOT_RUN"},
       "subscriptionId": "sub_1UXXXpRcvKApiJYW5NlKrZys",
       "cancelAtPeriodEnd": true,
       "cancelAt": 1796265232,
@@ -1740,7 +1741,9 @@
         "internal/evidence/acceptance/M5/m5-soft-launch-20261103/subscription-25-cancel-at-period-end-20261104/screenshots/billing.png",
         "internal/evidence/acceptance/M5/m5-soft-launch-20261103/subscription-25-cancel-at-period-end-20261104/screenshots/admin-subscription.png",
         "internal/evidence/acceptance/M5/m5-soft-launch-20261103/subscription-25-cancel-at-period-end-20261104/screenshots/checkout-block.png",
-        "internal/evidence/acceptance/M5/m5-soft-launch-20261103/subscription-25-cancel-at-period-end-20261104/screenshots/monthly-checkout-conflict.png"
+        "internal/evidence/acceptance/M5/m5-soft-launch-20261103/subscription-25-cancel-at-period-end-20261104/screenshots/monthly-checkout-conflict.png",
+        "internal/evidence/acceptance/M5/m5-soft-launch-20261103/subscription-25-portal-cancel-20261104/STATUS.md",
+        "internal/evidence/acceptance/M5/m5-soft-launch-20261103/subscription-25-portal-cancel-20261104/raw/stripe-portal-cancel-event.json"
       ]
     },
     "billingReturnScreenshot": {

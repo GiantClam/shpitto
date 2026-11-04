@@ -1,0 +1,3 @@
+{"source":"Stripe MCP GetEvents type=customer.subscription.updated (read-only, sanitized)","account":"acct_1USYQxRcvKApiJYW","livemode":false,
+"subscriptionAfterPortalCancel":{"id":"sub_1UXXXpRcvKApiJYW5NlKrZys","status":"active","customer":"cus_VY6rr4nkmOawCO","cancel_at_period_end":false,"cancel_at":1796265232,"current_period_end":1796265232,"canceled_at":1793776456,"cancellation_details":{"reason":"cancellation_requested"}},
+"event":{"id":"evt_1UXyOjRcvKApiJYWsCPe2EWM","type":"customer.subscription.updated","created":1793776456,"request":{"id":null,"note":"portal-initiated (no API request id)"},"previous_attributes":{"cancel_at":null,"canceled_at":null,"cancellation_details":{"reason":null}},"pending_webhooks_at_read":1}}
