@@ -37,4 +37,15 @@
 
 ## Deploy note（2026-11-03 Asia/Shanghai）
 
-代码已随 PR #10 squash 合入 `main` `29816c28` 并部署 Staging。API hosted Session URL 浏览器探测见 `session-url-probe-20261103/`（`PASS_probe_card_form`）。Staging 应用 handoff 仍 PENDING；M5 仍 IN_PROGRESS；勿把 acceptance-status 写成 PASS。
+代码已随 PR #10 squash 合入 `main` `29816c28` 并部署 Staging。API hosted Session URL 浏览器探测见 `session-url-probe-20261103/`（`PASS_probe_card_form`）。Staging 应用 handoff 后于 2026-11-04 复验见 `session-url-staging-app-20261104/`（`PASS_card_form`；soft_launch Session URL closed）。**M5 仍 IN_PROGRESS**；勿把 acceptance-status 写成 PASS。
+
+
+## Staging app-path Session URL reverify（2026-11-04 Asia/Shanghai）
+
+- Staging 账单「Open checkout」→ hosted Session `cs_test_a1parlBzuYGLBtTw…` → 浏览器 **$9 卡表单**（`PASS_card_form`；非 incomplete）
+- 证据：`session-url-staging-app-20261104/`（含 `STATUS.md`、`raw/checkout-session-app-path.json`、`screenshots/hosted-checkout-card-form.png`）
+- `soft_launch_session_url_closed=true`（软发 Session URL 项关闭）
+- **未付款**；**M5 仍 IN_PROGRESS** — 勿把 acceptance-status 写成 PASS
+- 与 API probe（`cs_test_a1BRjBZ7…` / `session-url-probe-20261103/`）分开归档；本条为应用路径
+
+

@@ -1,10 +1,10 @@
-﻿# Checkout Session URL — 本机修改计划（步骤 1–2 已合入 Staging tip 29816c2；Staging 应用路径仍待复验）
+﻿# Checkout Session URL — 本机修改计划（步骤 1–2 已合入 Staging tip 29816c2；Staging 应用路径 Session URL 已复验 PASS_card_form）
 
-日期（Asia/Shanghai）：2026-11-03  
+日期（Asia/Shanghai）：2026-11-03（状态更新 2026-11-04）  
 依据：`CHECKOUT_SESSION_URL_PLAN.md`、`internal/evidence/acceptance/stripe-test-pack-20261029/HOSTED_CHECKOUT_URL_DEFECT.md`  
 用户决策：修好跳转链接后再验（不做“只走 embedded”书面例外）。
 
-**当前状态（2026-11-03 Asia/Shanghai 更新）：** 步骤 1–2 代码已合入 `main` tip `29816c283450260cff9ac05e206ddbfc9b2b9e07`（PR #10 squash）并部署 Staging web SUCCESS（deployment `81fa8c1f…`，约 16:16–16:17）。API 直建 hosted Session（`cs_test_a1BRjBZ7…`）浏览器探测为 `PASS_probe_card_form`（出卡表单，非 incomplete），尽管账号仍 `details_submitted=false`。**Staging 应用侧 Session URL / UI handoff 路径仍 PENDING。** Soft-launch Session URL 项仅可记 probe-pass（API hosted），**未关单**。禁止把 M5 / acceptance-status 写成 PASS。证据：`session-url-probe-20261103/`。
+**当前状态（2026-11-04 Asia/Shanghai 更新）：** 步骤 1–2 代码已合入 `main` tip `29816c283450260cff9ac05e206ddbfc9b2b9e07`（PR #10 squash）并部署 Staging web SUCCESS。API 直建 hosted Session（`cs_test_a1BRjBZ7…`）浏览器探测为 `PASS_probe_card_form`（见 `session-url-probe-20261103/`）。**Staging 应用侧**（账单 → Open checkout → hosted Session `cs_test_a1parlBzuYGLBtTw…`）浏览器复验为 **`PASS_card_form`**（卡号/有效期/CVC 可见；非 incomplete；**未付款**）。证据：`session-url-staging-app-20261104/`。**`soft_launch_session_url_closed=true`**（软发 Session URL 项已关）。**M5 / acceptance-status 仍为 `IN_PROGRESS` — 禁止写成 PASS。** aipc `origin/main` 于 2026-11-04 fetch 仍为 tip `29816c28…`（未见更新 tip）。
 
 ---
 
@@ -121,10 +121,10 @@ return {sessionId, url: null, clientSecret: value.clientSecret, status: 'open'};
 ## 4. 复验清单（全勾才算软发 Session URL 关单）
 
 - [ ] `details_submitted=true`（必要时 `charges_enabled=true`）  
-- [ ] 新 Session create 返回 `checkoutUrl`，host 为 `checkout.stripe.com`  
-- [ ] 浏览器打开为卡表单，不是 “incomplete”  
+- [x] 新 Session create 返回 `checkoutUrl`，host 为 `checkout.stripe.com`（Staging app-path 2026-11-04）  
+- [x] 浏览器打开为卡表单，不是 “incomplete”（`PASS_card_form`；见 `session-url-staging-app-20261104/`）  
 - [ ] 测试卡支付并对账成功  
-- [ ] 证据写入 M5 soft-launch 或新 dated 目录  
+- [x] 证据写入 M5 soft-launch：`session-url-staging-app-20261104/` + 先前 `session-url-probe-20261103/`  
 - [ ] **仍不**自动等于 M5 阶段 PASS  
 
 ---
@@ -144,3 +144,17 @@ return {sessionId, url: null, clientSecret: value.clientSecret, status: 'open'};
 2. 按步骤 1–4 在 **aipc 本地**改上述 2 个 adapter 文件 + 测试。  
 3. 部署 Staging 后叫执行端复验步骤 5。  
 4. 复验绿之前，对外只说：**付款走 Embedded；hosted Session URL 仍未关。**
+
+
+---
+
+## 7. 2026-11-04 Staging 应用路径复验（归档）
+
+- 路径：已登录 Staging → billing → Permanent credit pack USD 9.00 → Open checkout  
+- Session：`cs_test_a1parlBzuYGLBtTw…` → `checkout.stripe.com` 卡表单（`PASS_card_form`）  
+- 支付：未尝试  
+- 软发 Session URL：`soft_launch_session_url_closed=true`  
+- **仍不**等于 M5 PASS；测试卡对账、账号入驻 flags 等仍可能未关  
+- 证据目录：`session-url-staging-app-20261104/`
+
+

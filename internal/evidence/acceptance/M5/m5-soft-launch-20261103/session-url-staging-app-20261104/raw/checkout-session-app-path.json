@@ -1,0 +1,45 @@
+﻿{
+  "archived_at_asia_shanghai": "2026-11-04",
+  "kind": "staging_app_path_session_url_reverify",
+  "not_raw_api_create": true,
+  "m5_stage_status": "IN_PROGRESS",
+  "acceptance_status_m5": "IN_PROGRESS",
+  "session_url_soft_launch_item": "PASS_staging_app_card_form",
+  "staging_app_handoff_reverify": "PASS_card_form",
+  "soft_launch_session_url_closed": true,
+  "payment_attempted": false,
+  "verdict": "PASS_card_form",
+  "incomplete_link": false,
+  "billing_url": "https://shpitto-m4-web-production.up.railway.app/workspaces/ab0d1ea5-f538-4b4b-8c59-698b5d7c5d39/billing",
+  "workspace": {
+    "name": "aff-m6-readback-1101",
+    "id": "ab0d1ea5-f538-4b4b-8c59-698b5d7c5d39"
+  },
+  "product_ui": {
+    "label": "Permanent credit pack",
+    "amount_usd": "9.00"
+  },
+  "checkout_session": {
+    "id": "cs_test_a1parlBzuYGLBtTwgBAImpTvEU9MclUMyJCraoWTd42i3GvWaD4pz8YDvf",
+    "url_host": "checkout.stripe.com",
+    "url_path_prefix": "/c/pay/cs_test_a1parlBzuYGLBtTw"
+  },
+  "stripe_checkout_ui": {
+    "product": "Shpitto test-only acceptance product",
+    "amount_display": "$9.00",
+    "merchant_sandbox_label": "shpitto-acceptance-20261020 sandbox",
+    "fields_seen": ["card_number", "expiry", "cvc"]
+  },
+  "staging_deploy_tip": {
+    "commit": "29816c283450260cff9ac05e206ddbfc9b2b9e07",
+    "pr": 10,
+    "note": "Prior Staging web deploy SUCCESS on this tip; aipc origin/main still at 29816c28 on 2026-11-04 fetch (no newer tip observed)"
+  },
+  "prior_api_probe": {
+    "session_id_prefix": "cs_test_a1BRjBZ7",
+    "evidence_dir": "session-url-probe-20261103",
+    "note": "Separate API hosted probe; this file is Staging app-path reverify only"
+  },
+  "screenshot": "screenshots/hosted-checkout-card-form.png",
+  "secrets": "none_included"
+}
