@@ -14,4 +14,7 @@
 - raw/stripe-refund.json, raw/stripe-charge.json, raw/stripe-payment-intent.json (sanitized MCP reads)
 - raw/app-refund-command.json (app-side preview/execute + ledger readback)
 
-UI evidence: observed via computerUse browser session on Staging /admin and billing page; screenshots not yet copied into this directory.
+## Screenshots
+- screenshots/refund-preview.png — /admin Request refund preview (full-unused, 900)
+- screenshots/refund-command-result.png — refund command result (confirmed)
+- screenshots/billing-after-refund.png — billing page after refund (available 1000)
